@@ -15,6 +15,7 @@
   --ax-g:#00875A; --ax-f:#2A9FDB; --ax-a:#B8892B; --ax-p:#0A1E4F;
   --hero-bg:#0A1E4F; --hero-ink:#FFFFFF; --hero-muted:#AFC3E6;
   --chip-bg:#EAF0FA;
+  --ax-w:#C8202F; --ax-j:#C4600F; --ax-s:#0F4C92; --ax-b:#6A3FB5; --on-ax:#FFFFFF;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow","Helvetica Neue",Arial,sans-serif;
 }
@@ -24,6 +25,7 @@
     --bg:#08112A; --surface:#0F1C3D; --ink:#E9EFFA; --muted:#9DAECF; --line:#223360;
     --ax-g:#2FBF87; --ax-f:#5CC2F2; --ax-a:#E0B458; --ax-p:#9DB8F5;
     --hero-bg:#050C20; --chip-bg:#172A58;
+    --ax-w:#F0626B; --ax-j:#F29A4E; --ax-s:#7FB0EE; --ax-b:#B79AF0; --on-ax:#08112A;
   }
 }
 :root[data-theme="dark"]{
@@ -31,6 +33,7 @@
   --bg:#08112A; --surface:#0F1C3D; --ink:#E9EFFA; --muted:#9DAECF; --line:#223360;
   --ax-g:#2FBF87; --ax-f:#5CC2F2; --ax-a:#E0B458; --ax-p:#9DB8F5;
   --hero-bg:#050C20; --chip-bg:#172A58;
+  --ax-w:#F0626B; --ax-j:#F29A4E; --ax-s:#7FB0EE; --ax-b:#B79AF0; --on-ax:#08112A;
 }
 *{box-sizing:border-box}
 html,body{margin:0}img{max-width:100%}
@@ -123,11 +126,32 @@ tr:last-child td{border-bottom:0}
 .todo p{margin:0;font-size:15px;color:var(--muted)}
 footer{padding-block:28px 40px;color:var(--muted);font-size:13px}
 
+/* TABS */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+.tab{appearance:none;border:0;background:none;color:var(--muted);cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.06em;
+  padding:14px 16px 12px;border-bottom:3px solid transparent;white-space:nowrap;display:inline-flex;gap:8px;align-items:baseline}
+.tab small{font-size:13px;opacity:.8}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--red)}
+.tab:focus-visible{outline:2px solid var(--blue);outline-offset:-4px}
+
+/* CROSSOVERS */
+.w{background:var(--ax-w)} .j{background:var(--ax-j)} .s{background:var(--ax-s)} .b{background:var(--ax-b)}
+.xo .bib,.xo .ep .num{color:var(--on-ax)}
+.ax-w .eyebrow{color:var(--ax-w)} .ax-j .eyebrow{color:var(--ax-j)} .ax-s .eyebrow{color:var(--ax-s)} .ax-b .eyebrow{color:var(--ax-b)}
+.bar12{grid-template-columns:repeat(10,1fr)}
+.pill{display:inline-block;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid currentColor;border-radius:3px;padding:1px 7px;color:var(--muted)}
+
 @media (max-width:560px){
   .ep{grid-template-columns:1fr}
   .ep .num{grid-auto-flow:column;justify-content:start;gap:10px;align-items:baseline;padding:12px 18px}
   .ep .num strong{font-size:30px}
   .bar{grid-template-columns:repeat(8,1fr)}
+  .bar12{grid-template-columns:repeat(5,1fr)}
+  .tab{font-size:16px;padding-inline:12px}
 }
 </style>
 </head>
@@ -137,12 +161,20 @@ footer{padding-block:28px 40px;color:var(--muted);font-size:13px}
   <div class="wrap">
     <div class="eyebrow">Groupama-FDJ United · Projet de podcast vidéo · Saison 1</div>
     <h1>La table<br>d'<span>Arthur Vichot</span></h1>
-    <p>Seize émissions animées par Arthur Vichot, ancien coureur de l'équipe et double champion de France. Chaque épisode active un axe précis : un partenaire, les 30 ans de l'équipe, ou les coulisses du cyclisme pour le grand public.</p>
-    <div class="meta"><span><b>16</b> épisodes</span><span><b>4</b> axes</span><span>Durée <b>libre</b></span><span>Titre de l'émission <b>à définir</b></span></div>
+    <p>Seize émissions animées par Arthur Vichot, ancien coureur de l'équipe et double champion de France. Chaque épisode active un axe précis : un partenaire, les 30 ans de l'équipe, ou les coulisses du cyclisme pour le grand public. En bonus, dix crossovers ouvrent la table à d'autres univers.</p>
+    <div class="meta"><span><b>16</b> épisodes</span><span><b>+10</b> crossovers</span><span>Durée <b>libre</b></span><span>Titre de l'émission <b>à définir</b></span></div>
   </div>
 </header>
 
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap" role="tablist">
+    <button class="tab" role="tab" id="tab-saison" aria-controls="saison" aria-selected="true">Saison 1 <small>16</small></button>
+    <button class="tab" role="tab" id="tab-crossovers" aria-controls="crossovers" aria-selected="false">Les crossovers <small>10 bonus</small></button>
+  </div>
+</nav>
+
 <main>
+<div id="saison" role="tabpanel" aria-labelledby="tab-saison">
 <section>
   <div class="wrap">
     <div class="sec-head">
@@ -409,7 +441,237 @@ footer{padding-block:28px 40px;color:var(--muted);font-size:13px}
     </div>
   </div>
 </section>
+</div>
+
+<!-- ============ CROSSOVERS ============ -->
+<div id="crossovers" class="xo" role="tabpanel" aria-labelledby="tab-crossovers" hidden>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="color:var(--red)">Épisodes bonus</div>
+      <h2>Les crossovers</h2>
+      <p>La table s'ouvre à d'autres univers : le gravel et l'aventure, la mer et la montagne, le football, le basket. Même concept, même dress code partagé, mais des invités venus d'ailleurs. L'équipe rayonne au-delà du vélo et touche de nouvelles cibles.</p>
+    </div>
+    <div class="grid16" aria-label="Répartition des 10 crossovers" style="margin-top:0">
+      <div class="bar bar12">
+        <div class="bib w">W1</div><div class="bib w">W2</div>
+        <div class="bib j">J1</div><div class="bib j">J2</div>
+        <div class="bib s">S1</div><div class="bib s">S2</div><div class="bib s">S3</div>
+        <div class="bib b">B1</div><div class="bib b">B2</div><div class="bib b">B3</div>
+      </div>
+      <div class="legend">
+        <span><i class="w"></i>Wilier Triestina · 2</span>
+        <span><i class="j"></i>Julbo · 2</span>
+        <span><i class="s"></i>PSG · 3</span>
+        <span><i class="b"></i>FDJ × Équipes de France de basket · 3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WILIER -->
+<section class="ax-w">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="w"></i>Partenaire technique · Wilier Triestina</div>
+      <h2>L'aventure à vélo</h2>
+      <p>Le fil rouge Wilier : sortir de la route, partir loin, raconter l'aventure.</p>
+    </div>
+    <div class="eps">
+
+      <article class="ep"><div class="num w"><small>ÉP.</small><strong>W1</strong></div><div class="body">
+        <h3>Off the road</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Quentin Pacher</span><span class="guest">Eddy Le Huitouze, The Grip</span><span class="guest">Paul Martin, ambassadeur Wilier</span></div>
+        <p class="pitch">Le gravel est-il une mode ou une nouvelle façon de rouler ? Eddy Le Huitouze, ancien de l'équipe passé chez The Grip, l'équipe gravel de Wilier, et Paul Martin, pratiquant et ambassadeur de la marque, racontent l'ultra-distance, les nuits dehors, les pannes au milieu de nulle part. Discussion à bâtons rompus, faite d'anecdotes vécues loin du bitume.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Wilier Triestina</b> et son équipe gravel The Grip.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Tenue bikepacking : chemise technique, casquette, sacoches de cadre en déco sur la table.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num w"><small>ÉP.</small><strong>W2</strong></div><div class="body">
+        <h3>La tier list du vélo</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Quentin Pacher</span><span class="guest">Kevin Geniets</span></div>
+        <p class="pitch">Où fait-on le meilleur vélo du monde ? Trois coureurs classent pays et régions selon ce qu'ils y ont vécu en course et à l'entraînement : routes, paysages, météo, accueil, nourriture. Chaque placement se défend, et se conteste. Le lien avec Wilier : l'envie de partir rouler ailleurs.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Wilier Triestina</b>, par l'angle aventure et voyage.</p></div>
+          <div class="fact"><span class="eyebrow">Mécanique</span><p>Tableau physique de S à D sur le plateau, étiquettes à placer à la main. Classement final en visuel pour les réseaux.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Tenue de voyageur : chemise à motifs, lunettes de soleil, sac à dos.</p></div>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<!-- JULBO -->
+<section class="ax-j">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="j"></i>Partenaire technique · Julbo</div>
+      <h2>Les ambassadeurs Julbo</h2>
+      <p>Deux épisodes construits avec des ambassadeurs de la marque. À chaque fois, un coureur de l'équipe complète la table.</p>
+    </div>
+    <div class="eps">
+
+      <article class="ep"><div class="num j"><small>ÉP.</small><strong>J1</strong></div><div class="body">
+        <h3>Grands espaces</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Baptiste Chassagne</span><span class="guest">Armel Le Cléac'h</span><span class="guest tbd">Coureur de l'équipe</span></div>
+        <p class="pitch">Un coureur, un navigateur, un aventurier. Ce qui relie ces pratiques : l'effort au long cours, la solitude, la lecture de la météo et de la lumière, et l'équipement dont dépend la performance.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Julbo</b>, via ses ambassadeurs.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Lunettes Julbo pour toute la table et tenue de navigateur (ciré, bonnet).</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num j"><small>ÉP.</small><strong>J2</strong></div><div class="body">
+        <h3>Le vélo et la carabine</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Lou Jeanmonnot</span><span class="guest">Quentin Fillon-Maillet</span><span class="guest tbd">Coureur de l'équipe</span></div>
+        <p class="pitch">Deux biathlètes face au cyclisme. On compare les saisons, l'entraînement foncier (le vélo fait partie de la préparation estivale des biathlètes), la gestion du cardio et de la précision, la vie en équipe.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Julbo</b>, via ses ambassadeurs.</p></div>
+          <div class="fact"><span class="eyebrow">Piste coureur</span><p>Romain Grégoire, Franc-Comtois comme Julbo. L'épisode compense aussi l'absence de biathlète dans la FDJ UNITED Factory (épisode F1).</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Lunettes Julbo pour tous et doudoune de biathlète.</p></div>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<!-- PSG -->
+<section class="ax-s">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="s"></i>Lien club · Paris Saint-Germain</div>
+      <h2>Même métier, autre sport</h2>
+      <p>Trois épisodes miroirs : un expert de Groupama-FDJ United face à son homologue du PSG. Ce qui change entre un sport d'endurance et un sport collectif, et ce qui ne change pas.</p>
+    </div>
+    <div class="eps">
+
+      <article class="ep"><div class="num s"><small>ÉP.</small><strong>S1</strong></div><div class="body">
+        <h3>Nourrir un athlète</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Lucas Papillon, GFDJ</span><span class="guest">Marion Vanhollebeke, PSG</span></div>
+        <p class="pitch">Un Grand Tour de trois semaines contre une saison à deux matchs par semaine. Besoins énergétiques, récupération, gestion du poids, suivi individuel : deux approches de la nutrition de haut niveau.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Lien PSG</b>, volet diététique.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Échange de polos staff : chacun porte la tenue de l'autre club.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num s"><small>ÉP.</small><strong>S2</strong></div><div class="body">
+        <h3>La donnée au service de la performance</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Olivier Mazenot, GFDJ</span><span class="guest">Juliette Demoly, PSG</span></div>
+        <p class="pitch">Capteurs de puissance d'un côté, tracking GPS et vidéo de l'autre. Quelles données on collecte, comment on les lit, comment on les transmet à un athlète sans l'enfermer dans les chiffres.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Lien PSG</b>, volet data science.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Échange de polos staff.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num s"><small>ÉP.</small><strong>S3</strong></div><div class="body">
+        <h3>Déplacer une équipe</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">William Bonnet, GFDJ</span><span class="guest">Mourade Kramdi, PSG</span></div>
+        <p class="pitch">Une caravane qui change d'hôtel chaque soir contre un club qui voyage d'un stade à l'autre. Camions, hébergement, imprévus, matériel oublié : la logistique racontée par ceux qui la font tourner.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Lien PSG</b>, volet logistique.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Échange de polos staff.</p></div>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<!-- BASKET -->
+<section class="ax-b">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="b"></i>Partenariat FDJ · Équipes de France de basket</div>
+      <h2>On parle basket</h2>
+      <p>Arthur Vichot et Quentin Pacher, tous deux fans de basket, coaniment. On parle basket, pas vélo, et le vélo s'invite naturellement dans la conversation. L'équipe rayonne à travers deux coureurs ouverts sur les autres sports, et touche le public du basket.</p>
+    </div>
+    <p class="note" style="margin-bottom:22px">Tournage à caler sur un rassemblement des équipes de France en France, organisé via FDJ.</p>
+    <div class="eps">
+
+      <article class="ep"><div class="num b"><small>ÉP.</small><strong>B1</strong></div><div class="body">
+        <h3>Boris Diaw</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest host">Quentin Pacher</span><span class="guest">Boris Diaw, manager des équipes de France</span></div>
+        <p class="pitch">De joueur à manager : construire un groupe, gérer des stars, préparer une compétition internationale.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>FDJ</b>, partenaire des équipes de France de basket.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Maillot des Bleus pour toute la table, animateurs compris.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num b"><small>ÉP.</small><strong>B2</strong></div><div class="body">
+        <h3>Maxime Raynaud</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest host">Quentin Pacher</span><span class="guest">Maxime Raynaud, pivot de l'équipe de France et du Paris Basket</span></div>
+        <p class="pitch">Le quotidien d'un pivot entre club et sélection : le poste, le physique, la récupération, et la comparaison avec le gabarit d'un coureur.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>FDJ</b>, partenaire des équipes de France de basket.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Maillot des Bleus pour toute la table.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num b"><small>ÉP.</small><strong>B3</strong></div><div class="body">
+        <h3>Dominique Malonga</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest host">Quentin Pacher</span><span class="guest">Dominique Malonga, pivot de l'équipe de France féminine</span></div>
+        <p class="pitch">La nouvelle génération du basket français : ambitions, exigences du haut niveau, rapport à la médiatisation.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>FDJ</b>, partenaire des équipes de France de basket.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Maillot des Bleues pour toute la table.</p></div>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="color:var(--red)">Avant production</div>
+      <h2>Points à valider</h2>
+    </div>
+    <div class="todo">
+      <div><b>Coureurs Julbo</b><p>Un coureur de l'équipe pour J1 et pour J2.</p></div>
+      <div><b>Accord PSG</b><p>Disponibilité des trois experts et cadre de communication croisée.</p></div>
+      <div><b>Rassemblement basket</b><p>Date et lieu du rassemblement des équipes de France en France, avec FDJ.</p></div>
+    </div>
+  </div>
+</section>
+</div>
 </main>
+
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('.tab'));
+  function show(id,focus){
+    tabs.forEach(function(t){
+      var on=t.getAttribute('aria-controls')===id;
+      t.setAttribute('aria-selected',on);
+      t.tabIndex=on?0:-1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden=!on;
+      if(on&&focus)t.focus();
+    });
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){
+      var id=t.getAttribute('aria-controls');show(id);
+      try{history.replaceState(null,'','#'+id)}catch(e){}
+      var nav=document.querySelector('.tabs');
+      if(nav.getBoundingClientRect().top<=0)window.scrollTo({top:nav.offsetTop,behavior:'auto'});
+    });
+    t.addEventListener('keydown',function(e){
+      var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(!d)return;
+      var n=tabs[(i+d+tabs.length)%tabs.length];show(n.getAttribute('aria-controls'),true);
+    });
+  });
+  if(location.hash==='#crossovers')show('crossovers');else show('saison');
+})();
+</script>
 
 <footer><div class="wrap">Groupama-FDJ United · Document de travail · Septembre 2026</div></footer>
 </body>
