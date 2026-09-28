@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Podcast Arthur Vichot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{
+  --navy:#0A1E4F; --blue:#1F4FD6; --sky:#4FB8EC; --red:#E1182B;
+  --bg:#F3F6FB; --surface:#FFFFFF; --ink:#0B1530; --muted:#51607E; --line:#D7DFEC;
+  --ax-g:#00875A; --ax-f:#2A9FDB; --ax-a:#B8892B; --ax-p:#0A1E4F;
+  --hero-bg:#0A1E4F; --hero-ink:#FFFFFF; --hero-muted:#AFC3E6;
+  --chip-bg:#EAF0FA;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#08112A; --surface:#0F1C3D; --ink:#E9EFFA; --muted:#9DAECF; --line:#223360;
+    --ax-g:#2FBF87; --ax-f:#5CC2F2; --ax-a:#E0B458; --ax-p:#9DB8F5;
+    --hero-bg:#050C20; --chip-bg:#172A58;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#08112A; --surface:#0F1C3D; --ink:#E9EFFA; --muted:#9DAECF; --line:#223360;
+  --ax-g:#2FBF87; --ax-f:#5CC2F2; --ax-a:#E0B458; --ax-p:#9DB8F5;
+  --hero-bg:#050C20; --chip-bg:#172A58;
+}
+*{box-sizing:border-box}
+html,body{margin:0}img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.02}
+.eyebrow{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
+
+/* HERO */
+.hero{background:var(--hero-bg);color:var(--hero-ink);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;
+  background:linear-gradient(90deg,var(--blue) 0 33.3%,#fff 33.3% 66.6%,var(--red) 66.6%)}
+.hero .wrap{padding-block:56px 60px;display:grid;gap:28px}
+.hero .eyebrow{color:var(--sky)}
+.hero h1{font-size:clamp(46px,9vw,96px);font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:-.01em}
+.hero h1 span{color:var(--sky)}
+.hero p{max-width:62ch;color:var(--hero-muted);font-size:18px;margin:0}
+.hero .meta{display:flex;flex-wrap:wrap;gap:10px 28px;font-family:var(--display);font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.hero .meta b{color:var(--sky);font-weight:800}
+
+/* SECTIONS */
+section{padding-block:48px}
+section + section{border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:10px;margin-bottom:28px;max-width:70ch}
+.sec-head h2{font-size:clamp(34px,5vw,48px);font-weight:800;text-transform:uppercase}
+.sec-head p{margin:0;color:var(--muted)}
+
+/* CONCEPT */
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.pillar{border-top:3px solid var(--navy);padding-top:14px;display:grid;gap:6px;align-content:start}
+:root[data-theme="dark"] .pillar{border-top-color:var(--sky)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pillar{border-top-color:var(--sky)}}
+.pillar h3{font-size:24px;font-weight:700;text-transform:uppercase}
+.pillar p{margin:0;color:var(--muted)}
+
+/* GRID OF 16 */
+.grid16{margin-top:36px;display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:repeat(16,1fr);gap:4px}
+.bib{aspect-ratio:3/4;max-width:100%;border-radius:4px;display:grid;place-items:center;color:#fff;
+  font-family:var(--display);font-weight:800;font-size:clamp(12px,2.2vw,22px)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.g{background:var(--ax-g)} .f{background:var(--ax-f)} .a{background:var(--ax-a)} .p{background:var(--ax-p)}
+:root[data-theme="dark"] .bib.p{color:#08112A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bib.p{color:#08112A}}
+
+/* AXIS HEADER */
+.axis-tag{display:inline-flex;align-items:center;gap:10px}
+.axis-tag i{width:14px;height:14px;border-radius:2px}
+.ax-g .eyebrow{color:var(--ax-g)} .ax-f .eyebrow{color:var(--ax-f)} .ax-a .eyebrow{color:var(--ax-a)} .ax-p .eyebrow{color:var(--ax-p)}
+
+/* EPISODES */
+.eps{display:grid;gap:18px}
+.ep{background:var(--surface);border:1px solid var(--line);border-radius:6px;display:grid;grid-template-columns:92px 1fr;overflow:hidden}
+.ep .num{display:grid;align-content:start;justify-items:center;padding:18px 8px;color:#fff;font-family:var(--display)}
+.ep .num small{font-size:12px;letter-spacing:.14em;font-weight:700;opacity:.85}
+.ep .num strong{font-size:40px;font-weight:800;line-height:1}
+.ax-p .ep .num{color:#fff}
+:root[data-theme="dark"] .ax-p .ep .num{color:#08112A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ax-p .ep .num{color:#08112A}}
+.ep .body{padding:20px 22px 22px;display:grid;gap:14px;min-width:0}
+.ep h3{font-size:28px;font-weight:700;text-transform:uppercase}
+.ep .pitch{margin:0;max-width:72ch}
+.guests{display:flex;flex-wrap:wrap;gap:6px}
+.guest{background:var(--chip-bg);border-radius:3px;padding:3px 9px;font-size:14px;font-weight:500}
+.guest.host{font-weight:600}
+.guest.tbd{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 24px;border-top:1px solid var(--line);padding-top:14px}
+.fact{display:grid;gap:3px}
+.fact .eyebrow{font-size:12px;color:var(--muted)}
+.fact p{margin:0;font-size:15px}
+.note{font-size:14px;color:var(--muted);margin:0;border-left:3px solid var(--red);padding-left:12px}
+ul.tests{margin:0;padding-left:18px;display:grid;gap:4px;font-size:15px}
+ul.tests b{font-weight:600}
+
+/* FACTORY TABLE */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-bottom:22px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+.ok{color:var(--ax-g);font-weight:600}
+.alt{color:var(--ax-a);font-weight:600}
+
+/* TODO */
+.todo{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.todo div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.todo b{font-family:var(--display);font-size:18px;text-transform:uppercase;display:block;margin-bottom:4px}
+.todo p{margin:0;font-size:15px;color:var(--muted)}
+footer{padding-block:28px 40px;color:var(--muted);font-size:13px}
+
+@media (max-width:560px){
+  .ep{grid-template-columns:1fr}
+  .ep .num{grid-auto-flow:column;justify-content:start;gap:10px;align-items:baseline;padding:12px 18px}
+  .ep .num strong{font-size:30px}
+  .bar{grid-template-columns:repeat(8,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Groupama-FDJ United · Projet de podcast vidéo · Saison 1</div>
+    <h1>La table<br>d'<span>Arthur Vichot</span></h1>
+    <p>Seize émissions animées par Arthur Vichot, ancien coureur de l'équipe et double champion de France. Chaque épisode active un axe précis : un partenaire, les 30 ans de l'équipe, ou les coulisses du cyclisme pour le grand public.</p>
+    <div class="meta"><span><b>16</b> épisodes</span><span><b>4</b> axes</span><span>Durée <b>libre</b></span><span>Titre de l'émission <b>à définir</b></span></div>
+  </div>
+</header>
+
+<main>
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="color:var(--blue)">Le concept</div>
+      <h2>Une table ronde, pas un plateau</h2>
+    </div>
+    <div class="pillars">
+      <div class="pillar"><h3>L'animateur</h3><p>Arthur Vichot reçoit. Il connaît la maison de l'intérieur et parle le langage des coureurs, ce qui autorise la franchise et les souvenirs partagés.</p></div>
+      <div class="pillar"><h3>Le format</h3><p>Une conversation à bâtons rompus autour d'une table. Pas de déroulé rigide : les invités se répondent, rebondissent, se contredisent.</p></div>
+      <div class="pillar"><h3>Le dress code</h3><p>Signature de l'émission : tout le monde autour de la table adopte le même dress code, lié au thème du jour. Des propositions figurent sur chaque fiche.</p></div>
+      <div class="pillar"><h3>La durée</h3><p>Libre. Le format long est assumé : l'épisode dure le temps que la conversation mérite, et se découpe ensuite en extraits pour les réseaux.</p></div>
+    </div>
+
+    <div class="grid16" aria-label="Répartition des 16 épisodes">
+      <div class="bar">
+        <div class="bib g">G1</div><div class="bib g">G2</div><div class="bib g">G3</div><div class="bib g">G4</div><div class="bib g">G5</div>
+        <div class="bib f">F1</div><div class="bib f">F2</div><div class="bib f">F3</div><div class="bib f">F4</div><div class="bib f">F5</div>
+        <div class="bib a">A1</div><div class="bib a">A2</div><div class="bib a">A3</div>
+        <div class="bib p">P1</div><div class="bib p">P2</div><div class="bib p">P3</div>
+      </div>
+      <div class="legend">
+        <span><i class="g"></i>Groupama · 5 épisodes</span>
+        <span><i class="f"></i>FDJ United · 5 épisodes</span>
+        <span><i class="a"></i>30 ans de l'équipe · 3 épisodes</span>
+        <span><i class="p"></i>Grand public · 3 épisodes</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GROUPAMA -->
+<section class="ax-g" id="groupama">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="g"></i>Axe partenaire · Groupama</div>
+      <h2>Cinq épisodes Groupama</h2>
+      <p>Trois opérations activées : Ton Club Ton Maillot, la Musette Groupama et l'Étape du Tour des collaborateurs, plus un épisode dédié à la sécurité routière.</p>
+    </div>
+    <div class="eps">
+
+      <article class="ep"><div class="num g"><small>ÉP.</small><strong>G1</strong></div><div class="body">
+        <h3>Retour au club</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Romain Grégoire</span><span class="guest tbd">Invités surprise : anciens coéquipiers et adversaires chez les jeunes</span></div>
+        <p class="pitch">Romain Grégoire pense venir seul. Au fil de l'émission, des visages de ses années de jeune coureur s'installent un à un à la table : anciens coéquipiers de club, adversaires des courses cadets et juniors. Chacun ramène un souvenir, une course, une anecdote. On remonte le fil jusqu'au club qui l'a formé.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Ton Club Ton Maillot</b>, intégrée au récit : le club formateur est le fil rouge de l'épisode.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Chacun porte le maillot de son club de jeunesse.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num g"><small>ÉP.</small><strong>G2</strong></div><div class="body">
+        <h3>Les coureurs masqués</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Bastien Tronchon</span><span class="guest tbd">3 coureurs mystère, masqués</span></div>
+        <p class="pitch">Face à Bastien Tronchon, trois coureurs masqués. L'un d'eux l'a déjà battu. Bastien et Arthur doivent trouver lequel en posant des questions. Les trois ont le droit de mentir et de brouiller les pistes. Révélation finale et démasquage.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Ton Club Ton Maillot</b>, en présentation simple : « Cette vidéo est possible grâce à… »</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Bal masqué : tenue sombre pour tous et loup sur le visage. Arthur et Bastien retirent le leur en début d'émission, les mystères gardent le leur jusqu'au bout.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num g"><small>ÉP.</small><strong>G3</strong></div><div class="body">
+        <h3>Pas que des pâtes</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Lucas Papillon, diététicien</span><span class="guest tbd">Un jeune coureur de l'équipe</span></div>
+        <p class="pitch">Les coureurs ne mangent que des pâtes, pèsent chaque aliment, frôlent l'anorexie : les idées reçues ont la vie dure. Le diététicien de l'équipe et un jeune coureur les démontent une à une, avec ce qui se passe réellement dans l'assiette, à l'entraînement comme en course.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Opération Musette Groupama</b> : les musettes habillent le décor du studio.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Tablier ou veste de chef pour toute la table.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num g"><small>ÉP.</small><strong>G4</strong></div><div class="body">
+        <h3>Objectif Étape du Tour</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Directeur de la Performance</span><span class="guest">Collaborateurs Groupama engagés sur l'Étape du Tour</span></div>
+        <p class="pitch">Des salariés Groupama se préparent à l'Étape du Tour. Ils arrivent avec leurs questions, et Arthur et le Directeur de la Performance y répondent en mode FAQ : préparation, alimentation, matériel, gestion de l'effort le jour J. Un épisode conseil pour tous les pratiquants.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Participation des collaborateurs Groupama</b> à l'Étape du Tour.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Tenue cyclo complète, dossard de l'Étape épinglé.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num g"><small>ÉP.</small><strong>G5</strong></div><div class="body">
+        <h3>Rouler en confiance</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest tbd">Coureur 1</span><span class="guest tbd">Coureur 2</span></div>
+        <p class="pitch">Deux coureurs racontent l'entraînement sur route ouverte : comment ils se protègent, comment ils ressentent le danger, et pourquoi on peut malgré tout pratiquer en confiance, y compris pour se déplacer à vélo en ville. L'épisode alterne discussion et tests grandeur nature.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>Sécurité routière avec Groupama.</b></p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Gilet haute visibilité pour toute la table.</p></div>
+        </div>
+        <div class="fact"><span class="eyebrow">Séquences de test</span>
+          <ul class="tests">
+            <li><b>Bien mettre son casque</b> : hauteur sur le front, réglage des sangles sous les oreilles, serrage de la molette. Comparaison mal réglé / bien réglé.</li>
+            <li><b>Airbag pour cycliste</b> : test grandeur nature du déclenchement.</li>
+            <li><b>Voir et être vu</b> : studio plongé dans le noir, comparaison tenue sombre, éléments réfléchissants et éclairages.</li>
+            <li><b>Éclairage de jour</b> : intérêt d'un feu arrière clignotant même en plein jour.</li>
+            <li><b>Radar arrière</b> : démonstration de l'alerte de véhicule en approche.</li>
+            <li><b>Angle mort</b> : un invité se place derrière une silhouette de poids lourd et découvre ce que le chauffeur ne voit pas.</li>
+            <li><b>Écarteur de danger</b> : le petit bras qui pousse les voitures à garder leurs distances.</li>
+            <li><b>Rétroviseur, sonnette, clignotants de gants</b> : le petit équipement du vélotaf, testé et noté par les coureurs.</li>
+          </ul>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<!-- FDJ -->
+<section class="ax-f" id="fdj">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="f"></i>Axe partenaire · FDJ United</div>
+      <h2>Cinq rencontres Factory</h2>
+      <p>Chaque épisode active le programme de FDJ United qui soutient des athlètes dans leur projet olympique et paralympique. Même schéma à chaque fois : Arthur, un coureur de l'équipe, un athlète de la Factory, et en option un expert du staff. Une discussion entre sportifs de haut niveau dont tout le monde ressort valorisé.</p>
+    </div>
+
+    <p class="note" style="margin-bottom:22px">Le programme s'appelle désormais <b>FDJ UNITED Factory</b> (ex-FDJ Sport Factory, renommé en 2025). La liste officielle compte 34 athlètes, sans biathlète, basketteur ni traileur : des alternatives sont proposées ci-dessous.</p>
+
+    <div class="tbl"><table>
+      <thead><tr><th>Ép.</th><th>Coureur</th><th>Profil recherché</th><th>Proposition Factory</th></tr></thead>
+      <tbody>
+        <tr><td><b>F1</b></td><td>Romain Grégoire</td><td>Biathlète</td><td><span class="alt">Alternative</span> Mathis Desloges, ski de fond, triple vice-champion olympique à Milan 2026. Même culture de l'endurance nordique.</td></tr>
+        <tr><td><b>F2</b></td><td>Clément Braz Afonso</td><td>Sportif aux études longues (Clément est ingénieur)</td><td><span class="alt">À identifier</span> parmi les 34 athlètes. Angle possible : le cursus emlyon et le dispositif reconversion proposés par la Factory.</td></tr>
+        <tr><td><b>F3</b></td><td>Quentin Pacher</td><td>Basketteur ou profil sport co</td><td><span class="alt">Alternative</span> pas de sport collectif dans la Factory. Pistes : Cyréna Samba-Mayela (100 m haies, vice-championne olympique) ou Romane Dicko (judo, championne du monde 2022).</td></tr>
+        <tr><td><b>F4</b></td><td>David Gaudu</td><td>Sportive ou sportif trail</td><td><span class="alt">Alternative</span> Oriane Bertone, escalade de bloc, vice-championne du monde 2023 et 2025. Un grimpeur face à une grimpeuse.</td></tr>
+        <tr><td><b>F5</b></td><td>Tom Donnenwirth</td><td>Triathlète</td><td><span class="ok">Dans la Factory</span> Cassandre Beaugrand, championne olympique à Paris 2024. Option : Grégoire Berthon, para triathlon.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="eps">
+      <article class="ep"><div class="num f"><small>SÉRIE</small><strong>F1–5</strong></div><div class="body">
+        <h3>Sportifs de haut niveau, même combat</h3>
+        <p class="pitch">Deux disciplines, une même vie d'athlète. Préparation, sacrifices, gestion des échecs, rapport aux Jeux, vie d'après : chacun découvre le quotidien de l'autre et trouve des points communs inattendus. Un expert du staff Groupama-FDJ United peut compléter la table selon l'angle de l'épisode (préparateur physique, entraîneur, performance).</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>FDJ UNITED Factory</b> sur les cinq épisodes.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Échange de tenues : chaque invité porte une pièce de la discipline de l'autre (dossard de ski, bonnet de bain, chaussons d'escalade…).</p></div>
+          <div class="fact"><span class="eyebrow">Carte bonus</span><p>Alexandre Léauté, para cycliste, double champion paralympique à Paris 2024, fait le lien naturel avec le vélo.</p></div>
+        </div>
+      </div></article>
+    </div>
+  </div>
+</section>
+
+<!-- 30 ANS -->
+<section class="ax-a" id="trente-ans">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="a"></i>Axe institutionnel · 30 ans de l'équipe</div>
+      <h2>Trois épisodes exceptionnels</h2>
+      <p>Deux grandes figures de l'histoire récente et les deux fondateurs. Des épisodes événements, à forte valeur de prise de parole.</p>
+    </div>
+    <div class="eps">
+
+      <article class="ep"><div class="num a"><small>ÉP.</small><strong>A1</strong></div><div class="body">
+        <h3>Thibaut Pinot sort du silence</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Thibaut Pinot</span><span class="guest">Cédric Pineau</span><span class="guest">Jérémy Roy</span></div>
+        <p class="pitch">Pour la première fois depuis sa retraite, Thibaut Pinot accepte de sortir de sa discrétion. Autour de lui, deux équipiers fidèles de toujours, aujourd'hui reconvertis dans l'équipe : Cédric Pineau et Jérémy Roy. Une conversation entre amis qui ont tout partagé sur la route.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>30 ans de l'équipe</b>, épisode événement.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Flanelle et tenue de montagne, esprit Vosges saônoises.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num a"><small>ÉP.</small><strong>A2</strong></div><div class="body">
+        <h3>Arnaud Démare, la porte rouverte</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Arnaud Démare</span><span class="guest">Ignatas Konovalovas</span><span class="guest">Jacopo Guarnieri</span></div>
+        <p class="pitch">Arnaud Démare a quitté l'équipe en mauvais termes. Il revient pour la première fois, pour parler des bons souvenirs. À ses côtés, deux anciens de son train de sprint, Ignatas Konovalovas et Jacopo Guarnieri. Un épisode de réconciliation, tourné vers les victoires partagées.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>30 ans de l'équipe</b>, épisode événement.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Bleu-blanc-rouge pour toute la table, en clin d'œil aux titres de champion de France d'Arnaud et d'Arthur.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num a"><small>ÉP.</small><strong>A3</strong></div><div class="body">
+        <h3>Les frères fondateurs</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Marc Madiot</span><span class="guest">Yvon Madiot</span></div>
+        <p class="pitch">Marc et Yvon Madiot ont créé l'équipe. Ils retracent trente ans d'histoire : la naissance du projet, les coureurs qui l'ont marquée, les crises, les grandes victoires, et ce qui reste à écrire.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Activation</span><p><b>30 ans de l'équipe</b>, épisode fondateur.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Rétro 1997 : maillots et survêtements d'époque.</p></div>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<!-- GRAND PUBLIC -->
+<section class="ax-p" id="grand-public">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="axis-tag eyebrow"><i class="p"></i>Axe grand public · Coulisses</div>
+      <h2>Trois épisodes coulisses</h2>
+      <p>Des sujets que le public se pose sans avoir de réponse : l'argent, la pression, le recrutement. Des épisodes qui ouvrent les portes de l'équipe.</p>
+    </div>
+    <div class="eps">
+
+      <article class="ep"><div class="num p"><small>ÉP.</small><strong>P1</strong></div><div class="body">
+        <h3>Y a quoi dans le budget d'une équipe ?</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Philippe Jullien, directeur marketing et revenus</span><span class="guest">Clément Braz Afonso</span><span class="guest tbd">Invité business, partenaire investisseur (ex. responsable Skechers France)</span></div>
+        <p class="pitch">Un épisode business, en toute transparence : de quoi se compose le budget d'une équipe WorldTour, d'où viennent les revenus, où va l'argent. Le titre accrocheur sert de porte d'entrée vers tout le travail de l'ombre. Clément apporte son regard d'ingénieur, l'invité extérieur celui d'un partenaire qui a choisi d'investir.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Usage</span><p>Épisode réutilisable en <b>prospection partenaires</b>.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Costume-cravate pour toute la table, coureur compris.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num p"><small>ÉP.</small><strong>P2</strong></div><div class="body">
+        <h3>Tenir quand ça ne va pas</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">David Gaudu</span><span class="guest">Théo Soussoko, supporter</span><span class="guest">Marie-Laure Brunet, coach mentale</span></div>
+        <p class="pitch">Stress, mauvaises périodes, poids des avis extérieurs. David Gaudu accepte d'en parler. En face, un supporter fidèle de l'équipe, parfois dur avec elle sur les réseaux. Marie-Laure Brunet, ancienne biathlète et coach mentale de l'équipe, donne les clés. Un dialogue rare entre celui qui court et celui qui commente.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Tenue cocooning : sweat, jogging, chaussettes. Le confort pour parler à cœur ouvert.</p></div>
+        </div>
+      </div></article>
+
+      <article class="ep"><div class="num p"><small>ÉP.</small><strong>P3</strong></div><div class="body">
+        <h3>Comment on fabrique un coureur</h3>
+        <div class="guests"><span class="guest host">Arthur Vichot</span><span class="guest">Philippe Mauduit, directeur sportif</span><span class="guest">Joseph Berlin-Sémon, entraîneur de la Conti</span></div>
+        <p class="pitch">Deux voies pour arriver dans l'équipe, deux parties dans l'épisode.</p>
+        <div class="facts">
+          <div class="fact"><span class="eyebrow">Partie 1 · Formé à la maison</span><p><b>Rémi Daumas</b>, passé de la Conti au WorldTour. L'approche d'un jeune adulte, le dialogue avec les parents, la place des études.</p></div>
+          <div class="fact"><span class="eyebrow">Partie 2 · Recruté à l'extérieur</span><p><b>Émilien Jeannière</b> raconte en détail : les premiers contacts, la négociation, le projet qu'on lui a présenté.</p></div>
+          <div class="fact"><span class="eyebrow">Dress code proposé</span><p>Entretien d'embauche : chemise et blazer pour tous.</p></div>
+        </div>
+      </div></article>
+
+    </div>
+  </div>
+</section>
+
+<section id="a-valider">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="color:var(--red)">Avant production</div>
+      <h2>Points à valider</h2>
+    </div>
+    <div class="todo">
+      <div><b>Titre de l'émission</b><p>Nom définitif du podcast et habillage.</p></div>
+      <div><b>Castings ouverts</b><p>Invités surprise (G1), coureurs mystère (G2), jeune coureur (G3), deux coureurs sécurité (G5), nom du Directeur de la Performance (G4).</p></div>
+      <div><b>Appairages Factory</b><p>Validation avec FDJ United des athlètes proposés, notamment F1, F3 et F4 où le profil demandé n'existe pas dans la Factory.</p></div>
+      <div><b>Invité business P1</b><p>Accord du partenaire et périmètre des chiffres partageables.</p></div>
+      <div><b>Épisodes sensibles</b><p>A1, A2 et P2 : cadrer en amont avec chaque invité les sujets ouverts et fermés.</p></div>
+      <div><b>Accessoires G5</b><p>Sourcing airbag, radar, éclairages et silhouette poids lourd pour les tests.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">Groupama-FDJ United · Document de travail · Septembre 2026</div></footer>
+</body>
+</html>
