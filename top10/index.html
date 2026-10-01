@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Top 10 Cartes Caméra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#120E2B; --ink:#F2F0FF; --muted:#B4AEDD; --violet:#4B2FB8; --violet2:#2A1A7A; --accent:#FF7A3D; --on-accent:#1E1A3C;
+  --line:rgba(255,255,255,.22);
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+#stage{position:fixed;inset:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:radial-gradient(120% 90% at 50% 20%,#2A1A7A 0%,#120E2B 70%)}
+video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+#ladder{
+  position:absolute;left:max(8px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));bottom:calc(84px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;justify-content:center;gap:6px;margin:0;padding:0;list-style:none;
+}
+#ladder li{flex:0 1 58px;min-height:0;display:flex}
+.slot{
+  position:relative;width:46px;height:100%;min-height:30px;max-height:58px;padding:0;border-radius:9px;border:2px solid rgba(255,255,255,.85);overflow:hidden;
+  background:linear-gradient(160deg,var(--violet) 0%,var(--violet2) 55%,#B8470F 130%);color:#fff;cursor:pointer;
+  font-family:var(--display);font-weight:900;font-size:clamp(18px,3.6vh,28px);line-height:1;display:flex;align-items:center;justify-content:center;
+}
+.slot:disabled{cursor:default;opacity:.9}
+.slot.filled{border-color:var(--accent)}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot .n{position:absolute;left:3px;bottom:1px;font-size:14px;text-shadow:0 1px 3px #000}
+.slot:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+#bar{
+  position:absolute;left:0;right:0;bottom:0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));
+  display:flex;gap:8px;justify-content:center;flex-wrap:wrap;background:linear-gradient(to top,rgba(10,7,30,.85),rgba(10,7,30,0));
+}
+button{
+  font:600 15px var(--body);color:var(--ink);background:rgba(20,15,50,.78);border:1.5px solid var(--line);border-radius:10px;
+  padding:0 14px;min-height:48px;cursor:pointer;backdrop-filter:blur(6px)
+}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+#hint{
+  position:absolute;left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);max-width:70%;text-align:center;
+  background:rgba(10,7,30,.7);border-radius:999px;padding:8px 16px;font-size:14px;color:var(--ink)
+}
+#hint[hidden]{display:none}
+#progress{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));font:800 22px var(--display);letter-spacing:.04em;font-variant-numeric:tabular-nums;text-shadow:0 1px 4px #000}
+
+#end{
+  position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;
+  background:rgba(10,7,30,.78);border:1.5px solid var(--line);border-radius:14px;padding:22px 26px;max-width:80%
+}
+#end[hidden]{display:none}
+#end strong{font:900 clamp(30px,8vw,44px)/1 var(--display);text-transform:uppercase}
+
+.screen{
+  position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:18px;
+  padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));overflow:auto
+}
+.screen[hidden]{display:none}
+.screen .inner{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.kicker{font:700 13px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font:900 clamp(44px,12vw,72px)/.92 var(--display);text-transform:uppercase;margin:0}
+h2{font:800 28px/1 var(--display);text-transform:uppercase;margin:0}
+p{margin:0;color:var(--muted);line-height:1.5}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.status{min-height:1.4em;color:var(--ink);font-size:14px}
+
+.filebtn{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;min-height:48px;border-radius:10px;border:1.5px solid var(--line);background:rgba(20,15,50,.78);font-weight:600;cursor:pointer}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.filebtn:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+#customlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+#customlist li{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:6px}
+#customlist .thumb{width:40px;height:50px;border-radius:5px;overflow:hidden;flex:none}
+#customlist img{width:100%;height:100%;object-fit:cover;display:block}
+#customlist input[type=text]{flex:1;min-width:0;font:inherit;padding:8px;border:1.5px solid var(--line);border-radius:6px;background:#1B1540;color:var(--ink)}
+#customlist button{min-height:38px;padding:0 10px}
+.toggle{display:flex;gap:10px;align-items:center;font-weight:500}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <video id="video" playsinline muted></video>
+  <canvas id="cv"></canvas>
+  <div id="hint" hidden></div>
+  <div id="progress"></div>
+  <ol id="ladder"></ol>
+  <div id="end" hidden><strong id="endtitle"></strong><div class="row"><button class="primary" id="replay" type="button">Rejouer</button></div></div>
+  <div id="bar">
+    <button id="undo" type="button">Annuler</button>
+    <button id="again" type="button" class="primary">Nouveau tirage</button>
+    <button id="flip" type="button">Retourner</button>
+    <button id="openimgs" type="button">Mes images</button>
+  </div>
+</div>
+
+<section class="screen" id="intro">
+  <div class="inner">
+    <span class="kicker">Prototype · cartes fictives</span>
+    <h1>Top 10<br>Cartes</h1>
+    <p>La carte tirée apparaît sur ton front. Touche un rang à gauche pour la placer, la suivante arrive aussitôt. Le suivi du visage tourne dans ton navigateur, la vidéo n'est envoyée nulle part.</p>
+    <div class="row">
+      <button class="primary" id="startcam" type="button">Activer la caméra</button>
+      <button id="nocam" type="button">Jouer sans caméra</button>
+    </div>
+    <div class="status" id="status" role="status"></div>
+  </div>
+</section>
+
+<section class="screen" id="imgs" hidden>
+  <div class="inner">
+    <h2>Mes images</h2>
+    <p>Portraits, logos, maillots. Elles sont recadrées au format carte et restent sur cet appareil.</p>
+    <div class="row"><label class="filebtn" for="files">Ajouter des images<input id="files" type="file" accept="image/*" multiple></label></div>
+    <label class="toggle" for="only"><input id="only" type="checkbox"> Jouer uniquement avec mes images (3 minimum)</label>
+    <ul id="customlist"></ul>
+    <div class="row"><button class="primary" id="closeimgs" type="button">Fermer et relancer</button></div>
+  </div>
+</section>
+
+<script type="module">
+import {FaceLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const WASM="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+/* ---------- Cartes fictives (portraits SVG générés) ---------- */
+const NAMES=["Léo Varennes","Ilan Kessler","Mathis Orsini","Tom Valdès","Noé Brassac","Hugo Lenfant","Axel Morvan","Jules Carpentier","Enzo Delmas","Victor Aubry"];
+const SKINS=["#F1C9A5","#C98E66","#8D5A3C","#E6B48E","#6B4129","#D9A57E","#F4D3B5","#A6714B","#7A4B30","#EBC09A"];
+const HAIR=["#2B1E17","#5A3A22","#16120F","#8B6B3F","#3A2A20","#C2A06A","#2B1E17","#0F0D0C","#6B4A2B","#1E1713"];
+const JERSEY=["#E8541A","#2F6FEB","#18A67A","#F2B318","#D13B6B","#6A4DE0","#0E8FA8","#C73B2E","#3F7D2E","#8A5CF0"];
+const STYLE=[1,2,0,3,1,2,0,1,3,2];
+const BEARD=[0,1,0,0,1,0,1,0,0,1];
+function art(i){
+  const h=(i*37+210)%360,j=JERSEY[i],s=SKINS[i],hr=HAIR[i],st=STYLE[i];let hair="";
+  if(st===1)hair=`<path d="M128 238C124 150 276 150 272 238C252 206 148 206 128 238Z" fill="${hr}"/>`;
+  if(st===2)hair=`<g fill="${hr}"><circle cx="138" cy="218" r="28"/><circle cx="168" cy="182" r="32"/><circle cx="205" cy="168" r="34"/><circle cx="242" cy="182" r="32"/><circle cx="270" cy="216" r="28"/><circle cx="130" cy="252" r="17"/><circle cx="272" cy="252" r="17"/></g>`;
+  if(st===3)hair=`<path d="M126 236C128 148 274 148 274 236Z" fill="${j}"/><path d="M126 230L318 230L318 246L126 246Z" fill="${j}"/><path d="M126 236L274 236" stroke="rgba(0,0,0,.25)" stroke-width="4"/>`;
+  const beard=BEARD[i]?`<path d="M138 272C140 342 260 342 262 272C248 304 152 304 138 272Z" fill="${hr}" opacity=".9"/>`:"";
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},55%,34%)"/><stop offset="1" stop-color="hsl(${(h+40)%360},60%,18%)"/></linearGradient><radialGradient id="r" cx=".5" cy=".38" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="400" height="500" fill="url(#g)"/><rect width="400" height="500" fill="url(#r)"/><path d="M30 500C46 400 118 366 200 366C282 366 354 400 370 500Z" fill="${j}"/><path d="M150 366L200 420L250 366" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="10" stroke-linejoin="round"/><path d="M60 460C120 440 280 440 340 460" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="14"/><rect x="172" y="318" width="56" height="62" rx="14" fill="${s}"/><ellipse cx="200" cy="248" rx="70" ry="86" fill="${s}"/><ellipse cx="130" cy="256" rx="10" ry="18" fill="${s}"/><ellipse cx="270" cy="256" rx="10" ry="18" fill="${s}"/>${beard}${hair}<g fill="#1a1414"><ellipse cx="172" cy="256" rx="7" ry="8"/><ellipse cx="228" cy="256" rx="7" ry="8"/></g><g stroke="${hr}" stroke-width="7" stroke-linecap="round"><path d="M154 232L190 236"/><path d="M246 232L210 236"/></g><path d="M200 262L194 288L206 288" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M178 306C192 316 208 316 222 306" fill="none" stroke="#5a2b22" stroke-width="6" stroke-linecap="round"/></svg>`;
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+function mkCard(id,name,src){const img=new Image();img.src=src;return {id,name,src,img};}
+const defaults=NAMES.map((n,i)=>mkCard("d"+i,n,art(i)));
+let custom=[],onlyMine=false,nextId=1;
+
+/* ---------- État du jeu ---------- */
+const state={queue:[],slots:[],cur:null,history:[],total:10};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newGame(){
+  const src=(onlyMine&&custom.length>=3)?custom:defaults.concat(custom);
+  const n=Math.min(10,src.length);
+  state.total=n;state.slots=new Array(n).fill(null);
+  state.queue=shuffle(src).slice(0,n);state.cur=state.queue.shift()||null;state.history=[];
+  renderUI();
+}
+function place(i){if(!state.cur||state.slots[i])return;state.slots[i]=state.cur;state.history.push(i);state.cur=state.queue.shift()||null;renderUI();}
+function undo(){if(!state.history.length)return;const i=state.history.pop();if(state.cur)state.queue.unshift(state.cur);state.cur=state.slots[i];state.slots[i]=null;renderUI();}
+function renderUI(){
+  const l=$("ladder");l.innerHTML="";
+  for(let i=0;i<state.total;i++){
+    const c=state.slots[i],li=document.createElement("li"),b=document.createElement("button");
+    b.type="button";b.className="slot"+(c?" filled":"");b.setAttribute("aria-label",c?`Rang ${i+1} : ${c.name}`:`Placer la carte au rang ${i+1}`);
+    b.disabled=!!c||!state.cur;
+    b.innerHTML=c?`<img src="${c.src}" alt=""><span class="n">${i+1}</span>`:String(i+1);
+    b.onclick=()=>place(i);li.appendChild(b);l.appendChild(li);
+  }
+  $("progress").textContent=`${state.history.length}/${state.total}`;
+  $("undo").disabled=!state.history.length;
+  const done=!state.cur;
+  $("end").hidden=!done;
+  if(done)$("endtitle").textContent=`Top ${state.total} complet`;
+}
+
+/* ---------- Mes images ---------- */
+function renderCustom(){
+  const ul=$("customlist");ul.innerHTML="";
+  custom.forEach(c=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span class="thumb"><img src="${c.src}" alt=""></span><input type="text" id="nm-${c.id}" value="${esc(c.name)}" maxlength="28" aria-label="Nom affiché"><button type="button" aria-label="Retirer cette image">Retirer</button>`;
+    li.querySelector("input").oninput=e=>{c.name=e.target.value||"Sans nom";};
+    li.querySelector("button").onclick=()=>{custom=custom.filter(x=>x.id!==c.id);syncOnly();renderCustom();};
+    ul.appendChild(li);
+  });
+  syncOnly();
+}
+function syncOnly(){
+  const cb=$("only"),ok=custom.length>=3;
+  cb.disabled=!ok;if(!ok){onlyMine=false;cb.checked=false;}
+}
+$("only").onchange=e=>{onlyMine=e.target.checked;};
+function toCard(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();fr.onerror=rej;
+    fr.onload=()=>{
+      const im=new Image();im.onerror=rej;
+      im.onload=()=>{
+        const W=480,H=600,cv=document.createElement("canvas");cv.width=W;cv.height=H;
+        const ctx=cv.getContext("2d"),r=Math.max(W/im.width,H/im.height),w=im.width*r,h=im.height*r;
+        ctx.drawImage(im,(W-w)/2,(H-h)/2,w,h);
+        const name=file.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").slice(0,28)||"Sans nom";
+        res(mkCard("c"+(nextId++),name,cv.toDataURL("image/jpeg",.86)));
+      };
+      im.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+$("files").onchange=async e=>{
+  const fs=[...(e.target.files||[])].slice(0,40);
+  const cards=await Promise.all(fs.map(f=>toCard(f).catch(()=>null)));
+  cards.forEach(c=>{if(c)custom.push(c);});
+  e.target.value="";renderCustom();
+};
+$("openimgs").onclick=()=>{$("imgs").hidden=false;};
+$("closeimgs").onclick=()=>{$("imgs").hidden=true;newGame();};
+
+/* ---------- Caméra + suivi du visage ---------- */
+const video=$("video"),cv=$("cv"),ctx=cv.getContext("2d");
+let landmarker=null,stream=null,camOK=false,facing="user",lastTime=-1,faceSeen=false;
+const pose={x:0,y:0,w:0,rot:0,init:false};
+
+async function openCamera(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();camOK=true;pose.init=false;
+}
+async function loadTracker(){
+  const fs=await FilesetResolver.forVisionTasks(WASM);
+  const opts=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numFaces:1});
+  try{landmarker=await FaceLandmarker.createFromOptions(fs,opts("GPU"));}
+  catch(e){landmarker=await FaceLandmarker.createFromOptions(fs,opts("CPU"));}
+}
+function setStatus(t){$("status").textContent=t;}
+
+$("startcam").onclick=async()=>{
+  $("startcam").disabled=true;$("nocam").disabled=true;
+  setStatus("Autorise la caméra quand le navigateur le demande…");
+  try{await openCamera();}
+  catch(e){setStatus("Caméra refusée ou indisponible. Vérifie l'autorisation du site, ou joue sans caméra.");$("startcam").disabled=false;$("nocam").disabled=false;return;}
+  setStatus("Chargement du suivi du visage…");
+  try{await loadTracker();}
+  catch(e){setStatus("Suivi du visage non chargé (connexion ?). La carte restera fixe à l'écran.");await new Promise(r=>setTimeout(r,1800));}
+  begin();
+};
+$("nocam").onclick=()=>{camOK=false;begin();};
+$("flip").onclick=async()=>{
+  if(!camOK)return;
+  facing=facing==="user"?"environment":"user";
+  try{await openCamera();}catch(e){facing=facing==="user"?"environment":"user";}
+};
+$("again").onclick=newGame;$("replay").onclick=newGame;$("undo").onclick=undo;
+
+let started=false;
+async function begin(){
+  $("intro").hidden=true;
+  try{await document.fonts.load('800 24px "Big Shoulders Display"');}catch(e){}
+  newGame();
+  if(!started){started=true;requestAnimationFrame(loop);}
+}
+
+/* ---------- Dessin ---------- */
+function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function drawCard(card,cx,cy,w,rot){
+  const h=w*1.25,r=w*.05;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);
+  ctx.shadowColor="rgba(0,0,0,.45)";ctx.shadowBlur=w*.08;ctx.shadowOffsetY=w*.03;
+  rrect(ctx,-w/2,-h/2,w,h,r);ctx.fillStyle="#2A1A7A";ctx.fill();
+  ctx.shadowColor="transparent";
+  rrect(ctx,-w/2,-h/2,w,h,r);ctx.clip();
+  if(card.img.complete&&card.img.naturalWidth)ctx.drawImage(card.img,-w/2,-h/2,w,h);
+  const bh=h*.16;
+  ctx.fillStyle="#4B2FB8";ctx.fillRect(-w/2,h/2-bh,w,bh);
+  ctx.fillStyle="#fff";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.font=`800 ${Math.round(bh*.58)}px "Big Shoulders Display","Arial Narrow",Impact,sans-serif`;
+  ctx.fillText(card.name.toUpperCase(),0,h/2-bh/2+bh*.04,w*.92);
+  ctx.restore();
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);rrect(ctx,-w/2,-h/2,w,h,r);ctx.lineWidth=Math.max(2,w*.012);ctx.strokeStyle="rgba(255,255,255,.9)";ctx.stroke();ctx.restore();
+}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+function loop(){
+  requestAnimationFrame(loop);
+  const live=camOK&&video.readyState>=2&&video.videoWidth>0;
+  if(live){
+    if(cv.width!==video.videoWidth||cv.height!==video.videoHeight){cv.width=video.videoWidth;cv.height=video.videoHeight;}
+  }else if(cv.width!==720||cv.height!==1280){cv.width=720;cv.height=1280;}
+  const W=cv.width,H=cv.height,mirror=facing==="user";
+  ctx.clearRect(0,0,W,H);
+  if(live){
+    ctx.save();if(mirror){ctx.translate(W,0);ctx.scale(-1,1);}
+    ctx.drawImage(video,0,0,W,H);ctx.restore();
+  }else{
+    const g=ctx.createRadialGradient(W/2,H*.2,40,W/2,H*.2,H*.9);g.addColorStop(0,"#2A1A7A");g.addColorStop(1,"#120E2B");
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  }
+  if(!state.cur){$("hint").hidden=true;return;}
+
+  let target=null;
+  if(live&&landmarker&&video.currentTime!==lastTime){
+    lastTime=video.currentTime;
+    try{
+      const res=landmarker.detectForVideo(video,performance.now());
+      const lm=res&&res.faceLandmarks&&res.faceLandmarks[0];
+      if(lm){
+        const P=i=>({x:(mirror?1-lm[i].x:lm[i].x)*W,y:lm[i].y*H});
+        let a=P(234),b=P(454);if(b.x<a.x){const t=a;a=b;b=t;}
+        const top=P(10),chin=P(152);
+        const faceW=Math.hypot(b.x-a.x,b.y-a.y),upx=top.x-chin.x,upy=top.y-chin.y,ul=Math.hypot(upx,upy)||1;
+        const ux=upx/ul,uy=upy/ul,cw=faceW*.9,ch=cw*1.25;
+        target={x:top.x+ux*ch*.4,y:top.y+uy*ch*.4,w:cw,rot:Math.atan2(ux,-uy)};
+        faceSeen=true;
+      }else faceSeen=false;
+    }catch(e){}
+    pose.lastTarget=target;
+  }
+  if(pose.lastTarget&&faceSeen){
+    const t=pose.lastTarget;
+    if(!pose.init){Object.assign(pose,{x:t.x,y:t.y,w:t.w,rot:t.rot,init:true});}
+    else{pose.x=lerp(pose.x,t.x,.55);pose.y=lerp(pose.y,t.y,.55);pose.w=lerp(pose.w,t.w,.45);pose.rot=lerp(pose.rot,t.rot,.5);}
+    drawCard(state.cur,pose.x,pose.y,pose.w,pose.rot);
+    $("hint").hidden=true;
+  }else{
+    const w=Math.min(W*.5,H*.3);
+    drawCard(state.cur,W/2,H*.3,w,-.05);
+    const hint=$("hint");
+    if(live&&landmarker){hint.hidden=false;hint.textContent="Place ton visage dans le cadre";}
+    else if(live){hint.hidden=false;hint.textContent="Suivi du visage indisponible";}
+    else hint.hidden=true;
+  }
+}
+renderCustom();
+</script>
+</body>
+</html>
