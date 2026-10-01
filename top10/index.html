@@ -106,7 +106,7 @@ p{margin:0;color:var(--muted);line-height:1.5}
 
 <section class="screen" id="intro">
   <div class="inner">
-    <span class="kicker">Prototype · cartes fictives</span>
+    <span class="kicker">Groupama-FDJ United · les 30 ans</span>
     <h1>Top 10<br>Cartes</h1>
     <p>La carte tirée apparaît sur ton front. Touche un rang à gauche pour la placer, la suivante arrive aussitôt. Le suivi du visage tourne dans ton navigateur, la vidéo n'est envoyée nulle part.</p>
     <div class="row">
@@ -134,24 +134,40 @@ import {FaceLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 const WASM="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
-/* ---------- Cartes fictives (portraits SVG générés) ---------- */
-const NAMES=["Léo Varennes","Ilan Kessler","Mathis Orsini","Tom Valdès","Noé Brassac","Hugo Lenfant","Axel Morvan","Jules Carpentier","Enzo Delmas","Victor Aubry"];
-const SKINS=["#F1C9A5","#C98E66","#8D5A3C","#E6B48E","#6B4129","#D9A57E","#F4D3B5","#A6714B","#7A4B30","#EBC09A"];
-const HAIR=["#2B1E17","#5A3A22","#16120F","#8B6B3F","#3A2A20","#C2A06A","#2B1E17","#0F0D0C","#6B4A2B","#1E1713"];
-const JERSEY=["#E8541A","#2F6FEB","#18A67A","#F2B318","#D13B6B","#6A4DE0","#0E8FA8","#C73B2E","#3F7D2E","#8A5CF0"];
-const STYLE=[1,2,0,3,1,2,0,1,3,2];
-const BEARD=[0,1,0,0,1,0,1,0,0,1];
-function art(i){
-  const h=(i*37+210)%360,j=JERSEY[i],s=SKINS[i],hr=HAIR[i],st=STYLE[i];let hair="";
-  if(st===1)hair=`<path d="M128 238C124 150 276 150 272 238C252 206 148 206 128 238Z" fill="${hr}"/>`;
-  if(st===2)hair=`<g fill="${hr}"><circle cx="138" cy="218" r="28"/><circle cx="168" cy="182" r="32"/><circle cx="205" cy="168" r="34"/><circle cx="242" cy="182" r="32"/><circle cx="270" cy="216" r="28"/><circle cx="130" cy="252" r="17"/><circle cx="272" cy="252" r="17"/></g>`;
-  if(st===3)hair=`<path d="M126 236C128 148 274 148 274 236Z" fill="${j}"/><path d="M126 230L318 230L318 246L126 246Z" fill="${j}"/><path d="M126 236L274 236" stroke="rgba(0,0,0,.25)" stroke-width="4"/>`;
-  const beard=BEARD[i]?`<path d="M138 272C140 342 260 342 262 272C248 304 152 304 138 272Z" fill="${hr}" opacity=".9"/>`:"";
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},55%,34%)"/><stop offset="1" stop-color="hsl(${(h+40)%360},60%,18%)"/></linearGradient><radialGradient id="r" cx=".5" cy=".38" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="400" height="500" fill="url(#g)"/><rect width="400" height="500" fill="url(#r)"/><path d="M30 500C46 400 118 366 200 366C282 366 354 400 370 500Z" fill="${j}"/><path d="M150 366L200 420L250 366" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="10" stroke-linejoin="round"/><path d="M60 460C120 440 280 440 340 460" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="14"/><rect x="172" y="318" width="56" height="62" rx="14" fill="${s}"/><ellipse cx="200" cy="248" rx="70" ry="86" fill="${s}"/><ellipse cx="130" cy="256" rx="10" ry="18" fill="${s}"/><ellipse cx="270" cy="256" rx="10" ry="18" fill="${s}"/>${beard}${hair}<g fill="#1a1414"><ellipse cx="172" cy="256" rx="7" ry="8"/><ellipse cx="228" cy="256" rx="7" ry="8"/></g><g stroke="${hr}" stroke-width="7" stroke-linecap="round"><path d="M154 232L190 236"/><path d="M246 232L210 236"/></g><path d="M200 262L194 288L206 288" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M178 306C192 316 208 316 222 306" fill="none" stroke="#5a2b22" stroke-width="6" stroke-linecap="round"/></svg>`;
+/* ---------- Légendes de l'équipe ----------
+   Photos attendues dans le dossier photos/ à côté de cette page : <slug>.jpg (ou .png / .webp), format portrait 4:5.
+   Sans photo, une silhouette neutre avec les initiales s'affiche. */
+const ROSTER=[
+  ["thibaut-pinot","Thibaut Pinot"],
+  ["arnaud-demare","Arnaud Démare"],
+  ["frederic-guesdon","Frédéric Guesdon"],
+  ["philippe-gilbert","Philippe Gilbert"],
+  ["bradley-mcgee","Bradley McGee"],
+  ["baden-cooke","Baden Cooke"],
+  ["david-gaudu","David Gaudu"],
+  ["sandy-casar","Sandy Casar"],
+  ["stefan-kung","Stefan Küng"],
+  ["arthur-vichot","Arthur Vichot"]
+];
+function placeholder(name){
+  const ini=name.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A2A9A"/><stop offset="1" stop-color="#17113F"/></linearGradient></defs><rect width="400" height="500" fill="url(#g)"/><path d="M40 500C56 410 120 378 200 378C280 378 344 410 360 500Z" fill="#6A5BC4"/><ellipse cx="200" cy="262" rx="72" ry="88" fill="#6A5BC4"/><rect x="172" y="330" width="56" height="60" rx="14" fill="#6A5BC4"/><text x="200" y="290" text-anchor="middle" font-family="Arial Narrow,Arial,sans-serif" font-weight="800" font-size="84" fill="#F2F0FF">${ini}</text><text x="200" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="20" letter-spacing="3" fill="#B4AEDD">PHOTO À AJOUTER</text></svg>`;
   return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
 }
 function mkCard(id,name,src){const img=new Image();img.src=src;return {id,name,src,img};}
-const defaults=NAMES.map((n,i)=>mkCard("d"+i,n,art(i)));
+const defaults=ROSTER.map(([slug,name])=>({id:"d-"+slug,slug,name,src:placeholder(name),img:new Image()}));
+function loadPhoto(c){
+  return new Promise(res=>{
+    const exts=["jpg","png","webp"];let k=0;const img=c.img;
+    img.onload=()=>{c.src=img.src;res();};
+    img.onerror=()=>{
+      k++;
+      if(k<exts.length){img.src="photos/"+c.slug+"."+exts[k];}
+      else{img.onerror=null;img.onload=()=>{res();};img.src=c.src;}
+    };
+    img.src="photos/"+c.slug+"."+exts[0];
+  });
+}
 let custom=[],onlyMine=false,nextId=1;
 
 /* ---------- État du jeu ---------- */
@@ -267,6 +283,7 @@ let started=false;
 async function begin(){
   $("intro").hidden=true;
   try{await document.fonts.load('800 24px "Big Shoulders Display"');}catch(e){}
+  await Promise.all(defaults.map(loadPhoto));
   newGame();
   if(!started){started=true;requestAnimationFrame(loop);}
 }
