@@ -18,7 +18,7 @@
 html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 #stage{position:fixed;inset:0}
 canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:radial-gradient(120% 90% at 50% 20%,#2A1A7A 0%,#120E2B 70%)}
-video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+#video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 
 #ladder{
   position:absolute;left:max(8px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));bottom:calc(84px + env(safe-area-inset-bottom));
@@ -44,6 +44,10 @@ button{
   font:600 15px var(--body);color:var(--ink);background:rgba(20,15,50,.78);border:1.5px solid var(--line);border-radius:10px;
   padding:0 14px;min-height:48px;cursor:pointer;backdrop-filter:blur(6px)
 }
+button.rec-on{background:#D7263D;border-color:#D7263D;color:#fff}
+.btnlink{display:inline-flex;align-items:center;justify-content:center;font:600 15px var(--body);border-radius:10px;border:1.5px solid var(--line);padding:0 14px;min-height:48px;text-decoration:none;color:var(--ink);background:rgba(20,15,50,.78)}
+.btnlink.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+#preview{display:block;max-width:100%;max-height:58dvh;margin:0 auto;border-radius:12px;background:#000}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 button:disabled{opacity:.4;cursor:not-allowed}
 button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -100,6 +104,7 @@ p{margin:0;color:var(--muted);line-height:1.5}
     <button id="undo" type="button">Annuler</button>
     <button id="again" type="button" class="primary">Nouveau tirage</button>
     <button id="flip" type="button">Retourner</button>
+    <button id="rec" type="button">● Enregistrer</button>
     <button id="openimgs" type="button">Mes images</button>
   </div>
 </div>
@@ -113,6 +118,7 @@ p{margin:0;color:var(--muted);line-height:1.5}
       <button class="primary" id="startcam" type="button">Activer la caméra</button>
       <button id="nocam" type="button">Jouer sans caméra</button>
     </div>
+    <label class="toggle" for="withmic"><input id="withmic" type="checkbox" checked> Enregistrer aussi le son (micro)</label>
     <div class="status" id="status" role="status"></div>
   </div>
 </section>
@@ -125,6 +131,19 @@ p{margin:0;color:var(--muted);line-height:1.5}
     <label class="toggle" for="only"><input id="only" type="checkbox"> Jouer uniquement avec mes images (3 minimum)</label>
     <ul id="customlist"></ul>
     <div class="row"><button class="primary" id="closeimgs" type="button">Fermer et relancer</button></div>
+  </div>
+</section>
+
+<section class="screen" id="result" hidden>
+  <div class="inner">
+    <h2>Ta vidéo</h2>
+    <video id="preview" controls playsinline></video>
+    <div class="row">
+      <a class="btnlink primary" id="dl" href="#">Télécharger</a>
+      <button id="share" type="button" hidden>Partager</button>
+      <button id="redo" type="button">Refaire</button>
+    </div>
+    <p id="resinfo"></p>
   </div>
 </section>
 
@@ -245,12 +264,17 @@ $("closeimgs").onclick=()=>{$("imgs").hidden=true;newGame();};
 
 /* ---------- Caméra + suivi du visage ---------- */
 const video=$("video"),cv=$("cv"),ctx=cv.getContext("2d");
-let landmarker=null,stream=null,camOK=false,facing="user",lastTime=-1,faceSeen=false;
+let wantAudio=true,landmarker=null,stream=null,camOK=false,facing="user",lastTime=-1,faceSeen=false;
 const pose={x:0,y:0,w:0,rot:0,init:false};
 
 async function openCamera(){
   if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false});
+  const v={facingMode:facing,width:{ideal:1280},height:{ideal:720}};
+  try{stream=await navigator.mediaDevices.getUserMedia({video:v,audio:wantAudio?{echoCancellation:true,noiseSuppression:true}:false});}
+  catch(e){
+    if(!wantAudio)throw e;
+    wantAudio=false;stream=await navigator.mediaDevices.getUserMedia({video:v,audio:false});
+  }
   video.srcObject=stream;await video.play();camOK=true;pose.init=false;
 }
 async function loadTracker(){
@@ -262,6 +286,7 @@ async function loadTracker(){
 function setStatus(t){$("status").textContent=t;}
 
 $("startcam").onclick=async()=>{
+  wantAudio=$("withmic").checked;
   $("startcam").disabled=true;$("nocam").disabled=true;
   setStatus("Autorise la caméra quand le navigateur le demande…");
   try{await openCamera();}
@@ -273,7 +298,7 @@ $("startcam").onclick=async()=>{
 };
 $("nocam").onclick=()=>{camOK=false;begin();};
 $("flip").onclick=async()=>{
-  if(!camOK)return;
+  if(!camOK||rec.on)return;
   facing=facing==="user"?"environment":"user";
   try{await openCamera();}catch(e){facing=facing==="user"?"environment":"user";}
 };
@@ -310,6 +335,10 @@ function lerp(a,b,t){return a+(b-a)*t;}
 
 function loop(){
   requestAnimationFrame(loop);
+  drawFrame();
+  if(rec.on)recordFrame();
+}
+function drawFrame(){
   const live=camOK&&video.readyState>=2&&video.videoWidth>0;
   if(live){
     if(cv.width!==video.videoWidth||cv.height!==video.videoHeight){cv.width=video.videoWidth;cv.height=video.videoHeight;}
@@ -358,6 +387,89 @@ function loop(){
     else hint.hidden=true;
   }
 }
+
+/* ---------- Enregistrement vidéo ---------- */
+const rec={on:false,mr:null,chunks:[],canvas:document.createElement("canvas"),t0:0,timer:null,url:null,file:null};
+rec.ctx=rec.canvas.getContext("2d");
+function pickMime(){
+  if(!window.MediaRecorder)return null;
+  const c=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+  return c.find(m=>MediaRecorder.isTypeSupported(m))||"";
+}
+function drawLadderOn(c,W,H){
+  const n=state.total,top=H*.05,bottom=H*.9,gap=H*.008;
+  let sh=(bottom-top-gap*(n-1))/n;sh=Math.min(sh,H*.075);
+  const sw=sh*.8,x=W*.025,y0=top+((bottom-top)-(sh*n+gap*(n-1)))/2;
+  for(let i=0;i<n;i++){
+    const y=y0+i*(sh+gap),card=state.slots[i];
+    c.save();
+    rrect(c,x,y,sw,sh,sw*.14);
+    const g=c.createLinearGradient(x,y,x+sw,y+sh);g.addColorStop(0,"#4B2FB8");g.addColorStop(.6,"#2A1A7A");g.addColorStop(1,"#B8470F");
+    c.fillStyle=g;c.fill();
+    if(card&&card.img.complete&&card.img.naturalWidth){c.clip();c.drawImage(card.img,x,y,sw,sh);}
+    c.restore();
+    c.save();rrect(c,x,y,sw,sh,sw*.14);c.lineWidth=Math.max(2,sw*.05);c.strokeStyle=card?"#FF7A3D":"rgba(255,255,255,.88)";c.stroke();c.restore();
+    c.save();c.fillStyle="#fff";c.textBaseline="middle";c.shadowColor="rgba(0,0,0,.8)";c.shadowBlur=sh*.1;
+    c.font=`900 ${Math.round(sh*(card?.34:.55))}px "Big Shoulders Display","Arial Narrow",Impact,sans-serif`;
+    if(card){c.textAlign="left";c.fillText(String(i+1),x+sw*.08,y+sh*.8);}
+    else{c.textAlign="center";c.fillText(String(i+1),x+sw/2,y+sh/2+sh*.03);}
+    c.restore();
+  }
+}
+function recordFrame(){
+  const c=rec.ctx,W=rec.canvas.width,H=rec.canvas.height;
+  c.drawImage(cv,0,0,W,H);
+  drawLadderOn(c,W,H);
+  if(!state.cur){
+    c.save();c.textAlign="center";c.textBaseline="middle";c.fillStyle="#fff";c.shadowColor="rgba(0,0,0,.85)";c.shadowBlur=H*.015;
+    c.font=`900 ${Math.round(H*.07)}px "Big Shoulders Display","Arial Narrow",Impact,sans-serif`;
+    c.fillText("TOP "+state.total+" COMPLET",W/2,H*.45);c.restore();
+  }
+}
+function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function startRec(){
+  const mime=pickMime();
+  if(mime===null){const h=$("hint");h.hidden=false;h.textContent="Enregistrement non pris en charge par ce navigateur";return;}
+  rec.canvas.width=cv.width;rec.canvas.height=cv.height;
+  rec.ctx.drawImage(cv,0,0);
+  const out=rec.canvas.captureStream(30);
+  if(stream)stream.getAudioTracks().forEach(t=>out.addTrack(t));
+  rec.chunks=[];
+  const opts={videoBitsPerSecond:5000000};if(mime)opts.mimeType=mime;
+  rec.mr=new MediaRecorder(out,opts);
+  rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
+  rec.mr.onstop=showResult;
+  rec.mr.start(1000);
+  rec.on=true;rec.t0=Date.now();
+  const b=$("rec");b.classList.add("rec-on");b.textContent="■ 00:00";
+  $("flip").disabled=true;
+  rec.timer=setInterval(()=>{b.textContent="■ "+fmt(Date.now()-rec.t0);},500);
+}
+function stopRec(){
+  if(!rec.on)return;
+  rec.on=false;clearInterval(rec.timer);
+  const b=$("rec");b.classList.remove("rec-on");b.textContent="● Enregistrer";$("flip").disabled=false;
+  try{rec.mr.stop();}catch(e){}
+}
+function showResult(){
+  const type=(rec.mr&&rec.mr.mimeType)||"video/webm";
+  const ext=type.includes("mp4")?"mp4":"webm";
+  const d=new Date(),pad=n=>String(n).padStart(2,"0");
+  const name=`top10-cartes-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
+  const blob=new Blob(rec.chunks,{type});
+  if(rec.url)URL.revokeObjectURL(rec.url);
+  rec.url=URL.createObjectURL(blob);
+  rec.file=new File([blob],name,{type});
+  $("preview").src=rec.url;
+  const dl=$("dl");dl.href=rec.url;dl.setAttribute("download",name);
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[rec.file]}));
+  $("share").hidden=!canShare;
+  $("resinfo").textContent=(ext==="webm"?"Format WebM : si le réseau social le refuse, convertis-la en MP4. ":"")+"Taille : "+(blob.size/1048576).toFixed(1)+" Mo.";
+  $("result").hidden=false;
+}
+$("rec").onclick=()=>{rec.on?stopRec():startRec();};
+$("share").onclick=async()=>{try{await navigator.share({files:[rec.file],title:"Top 10 Cartes"});}catch(e){}};
+$("redo").onclick=()=>{$("preview").pause();$("result").hidden=true;};
 renderCustom();
 </script>
 </body>
