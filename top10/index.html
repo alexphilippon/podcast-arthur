@@ -152,6 +152,7 @@ p{margin:0;color:var(--muted);line-height:1.5}
 <script type="module">
 import {FaceLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
+import {fixMp4} from "../shared/mp4fix.js";
 const WASM="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
@@ -466,20 +467,21 @@ function stopRec(){
   const b=$("rec");b.classList.remove("rec-on");b.textContent="● Enregistrer";$("flip").disabled=false;
   try{rec.mr.stop();}catch(e){}
 }
-function showResult(){
+async function showResult(){
   const type=(rec.mr&&rec.mr.mimeType)||"video/webm";
   const ext=type.includes("mp4")?"mp4":"webm";
   const d=new Date(),pad=n=>String(n).padStart(2,"0");
   const name=`top10-cartes-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
-  const blob=new Blob(rec.chunks,{type});
+  let blob=new Blob(rec.chunks,{type}),fixed=false;
+  if(ext==="mp4"){try{const f=await fixMp4(blob);if(f&&f.size>0){blob=f;fixed=true;}}catch(e){}}
   if(rec.url)URL.revokeObjectURL(rec.url);
   rec.url=URL.createObjectURL(blob);
-  rec.file=new File([blob],name,{type});
+  rec.file=new File([blob],name,{type:ext==="mp4"?"video/mp4":type});
   $("preview").src=rec.url;
   const dl=$("dl");dl.href=rec.url;dl.setAttribute("download",name);
   const canShare=!!(navigator.canShare&&navigator.canShare({files:[rec.file]}));
   $("share").hidden=!canShare;
-  const info="Format Reel 9:16, "+rec.canvas.width+" × "+rec.canvas.height+", "+ext.toUpperCase()+", "+(blob.size/1048576).toFixed(1)+" Mo. Durée enregistrée : "+fmt(rec.elapsed||0)+"."+(ext==="webm"?" Ce navigateur ne produit pas de MP4 : Instagram peut refuser le WebM, réessaie avec Chrome à jour ou convertis le fichier.":"")+(rec.failed?" ⚠ L'enregistrement a été interrompu par le navigateur avant la fin.":"");
+  const info="Format Reel 9:16, "+rec.canvas.width+" × "+rec.canvas.height+", "+ext.toUpperCase()+(fixed?" standard":"")+", "+(blob.size/1048576).toFixed(1)+" Mo. Durée enregistrée : "+fmt(rec.elapsed||0)+"."+(ext==="webm"?" Ce navigateur ne produit pas de MP4 : Instagram peut refuser le WebM, réessaie avec Chrome à jour ou convertis le fichier.":"")+(rec.failed?" ⚠ L'enregistrement a été interrompu par le navigateur avant la fin.":"");
   $("resinfo").textContent=info;
   const pv=$("preview");
   pv.onloadedmetadata=()=>{
