@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bidon Pong</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1230; --ink:#F2F4FF; --muted:#AEB8E6; --blue:#0B2E6F; --red:#E2231A; --accent:#FF5A3C; --on-accent:#10163A;
+  --line:rgba(255,255,255,.24);
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+#stage{position:fixed;inset:0;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:radial-gradient(120% 90% at 50% 20%,#14306E 0%,#0B1230 70%)}
+#video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+#bar{
+  position:absolute;left:0;right:0;bottom:0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));
+  display:flex;gap:8px;justify-content:center;flex-wrap:wrap;background:linear-gradient(to top,rgba(6,9,30,.85),rgba(6,9,30,0));
+}
+button{
+  font:600 15px var(--body);color:var(--ink);background:rgba(10,16,48,.78);border:1.5px solid var(--line);border-radius:10px;
+  padding:0 14px;min-height:48px;cursor:pointer;backdrop-filter:blur(6px)
+}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button.rec-on{background:#D7263D;border-color:#D7263D;color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+select{font:inherit;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:#121A45;color:var(--ink)}
+
+#hint{
+  position:absolute;left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);max-width:80%;text-align:center;
+  background:rgba(6,9,30,.78);border-radius:999px;padding:8px 16px;font-size:14px;color:var(--ink)
+}
+#hint[hidden]{display:none}
+
+.screen{
+  position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:18px;
+  padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));overflow:auto
+}
+.screen[hidden]{display:none}
+.screen .inner{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.kicker{font:700 13px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font:900 clamp(48px,13vw,80px)/.9 var(--display);text-transform:uppercase;margin:0}
+h2{font:800 28px/1 var(--display);text-transform:uppercase;margin:0}
+p{margin:0;color:var(--muted);line-height:1.5}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.status{min-height:1.4em;color:var(--ink);font-size:14px}
+.field{display:flex;gap:10px;align-items:center;font-weight:500;flex-wrap:wrap}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+.filebtn{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;min-height:44px;border-radius:10px;border:1.5px solid var(--line);background:rgba(10,16,48,.78);font-weight:600;cursor:pointer}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.filebtn:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.btnlink{display:inline-flex;align-items:center;justify-content:center;font:600 15px var(--body);border-radius:10px;border:1.5px solid var(--line);padding:0 14px;min-height:48px;text-decoration:none;color:var(--ink);background:rgba(10,16,48,.78)}
+.btnlink.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+#preview{display:block;max-width:100%;max-height:58dvh;margin:0 auto;border-radius:12px;background:#000}
+</style>
+</head>
+<body>
+<div id="stage">
+  <video id="video" playsinline muted></video>
+  <canvas id="cv"></canvas>
+  <div id="hint" hidden></div>
+  <div id="bar">
+    <button id="again" type="button" class="primary">Rejouer</button>
+    <button id="flip" type="button">Retourner</button>
+    <button id="rec" type="button">● Enregistrer</button>
+  </div>
+</div>
+
+<section class="screen" id="intro">
+  <div class="inner">
+    <span class="kicker">Groupama-FDJ United · les 30 ans</span>
+    <h1>Bidon<br>Pong</h1>
+    <p>Incline la tête à gauche ou à droite pour déplacer ton vélo et renvoyer le bidon. Le premier à 5 points gagne. Le suivi du visage tourne dans ton navigateur, la vidéo n'est envoyée nulle part.</p>
+    <label class="field" for="mode">Mode
+      <select id="mode"><option value="1" selected>1 joueur contre l'ordinateur</option><option value="2">2 joueurs (deux visages)</option></select>
+    </label>
+    <label class="field" for="quality">Qualité
+      <select id="quality"><option value="stable" selected>Stable · 720 × 1280</option><option value="max">Maximale · 1080 × 1920 (plus lourd)</option></select>
+    </label>
+    <label class="field toggle" for="withmic"><input id="withmic" type="checkbox" checked> Enregistrer aussi le son (micro)</label>
+    <div class="row">
+      <label class="filebtn" for="logo">Logo sur le bidon (optionnel)<input id="logo" type="file" accept="image/*"></label>
+      <span class="status" id="logostatus"></span>
+    </div>
+    <div class="row">
+      <button class="primary" id="startcam" type="button">Activer la caméra</button>
+      <button id="nocam" type="button">Jouer sans caméra</button>
+    </div>
+    <div class="status" id="status" role="status"></div>
+  </div>
+</section>
+
+<section class="screen" id="result" hidden>
+  <div class="inner">
+    <h2>Ta vidéo</h2>
+    <video id="preview" controls playsinline></video>
+    <div class="row">
+      <a class="btnlink primary" id="dl" href="#">Télécharger</a>
+      <button id="share" type="button" hidden>Partager</button>
+      <button id="redo" type="button">Refaire</button>
+    </div>
+    <p id="resinfo"></p>
+  </div>
+</section>
+
+<script type="module">
+import {FaceLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+const WASM="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+/*CORE-START*/
+/* Terrain virtuel 720 × 1280. Joueur 0 = vélo du bas, joueur 1 = vélo du haut. */
+const FW=720,FH=1280,BW=190,BALL_R=40,TARGET=3,BY=[1130,150];
+const G={score:[0,0],bx:[360,360],bt:[360,360],ball:{x:360,y:640,vx:0,vy:0,rot:0},speed:560,phase:"count",count:3,serveDir:1,winner:-1,aimOff:0,dir:[1,1],wheel:[0,0],hit:[0,0]};
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function resetBall(){G.ball.x=FW/2;G.ball.y=FH/2;G.ball.vx=0;G.ball.vy=0;G.ball.rot=0;G.speed=560;}
+function newMatch(){G.score=[0,0];G.serveDir=Math.random()<.5?1:-1;G.bx=[FW/2,FW/2];G.bt=[FW/2,FW/2];G.phase="count";G.count=3;G.winner=-1;G.aimOff=0;resetBall();}
+function launch(){const a=(Math.random()*2-1)*.45;G.ball.vx=G.speed*Math.sin(a);G.ball.vy=G.serveDir*G.speed*Math.cos(a);}
+function scorePoint(k){
+  G.score[k]++;
+  if(G.score[k]>=TARGET){G.phase="over";G.winner=k;}
+  else{G.phase="count";G.count=2.2;G.serveDir=k===1?1:-1;resetBall();}
+}
+function hitBike(k){
+  const b=G.ball,top=BY[k]-52,bot=BY[k]+32;
+  if(b.y+BALL_R<top||b.y-BALL_R>bot)return false;
+  if(Math.abs(b.x-G.bx[k])>BW/2+BALL_R*.5)return false;
+  if(k===0?b.vy<=0:b.vy>=0)return false;
+  const off=clamp((b.x-G.bx[k])/(BW/2),-1,1),ang=off*1.0;
+  G.speed=Math.min(1050,G.speed*1.055);
+  b.vx=G.speed*Math.sin(ang);
+  b.vy=(k===0?-1:1)*G.speed*Math.cos(ang);
+  b.y=k===0?top-BALL_R:bot+BALL_R;
+  G.hit[k]=.18;
+  if(k===1)G.aimOff=(Math.random()*2-1)*55;
+  return true;
+}
+/* ai : null ou {speed} pour piloter le vélo du haut. ok : faux = jeu en pause. */
+function step(dt,ok,ai){
+  const f=1-Math.exp(-dt*14),lo=BW/2+8,hi=FW-BW/2-8;
+  for(let k=0;k<2;k++){
+    G.bt[k]=clamp(G.bt[k],lo,hi);
+    const nx=G.bx[k]+(G.bt[k]-G.bx[k])*f,dx=nx-G.bx[k];
+    if(Math.abs(dx)>.3)G.dir[k]=dx>0?1:-1;
+    G.wheel[k]+=dx/24;G.bx[k]=nx;G.hit[k]=Math.max(0,G.hit[k]-dt);
+  }
+  if(!ok)return;
+  if(G.phase==="count"){G.count-=dt;if(G.count<=0){G.phase="play";launch();}return;}
+  if(G.phase!=="play")return;
+  const b=G.ball;
+  if(ai){
+    const tx=b.vy<0?b.x+G.aimOff:FW/2,m=ai.speed*dt;
+    G.bt[1]=clamp(G.bt[1]+clamp(tx-G.bt[1],-m,m),lo,hi);
+  }
+  const dist=Math.hypot(b.vx,b.vy)*dt,n=Math.max(1,Math.ceil(dist/16)),h=dt/n;
+  for(let i=0;i<n;i++){
+    b.x+=b.vx*h;b.y+=b.vy*h;
+    if(b.x<BALL_R){b.x=BALL_R;b.vx=Math.abs(b.vx);}
+    if(b.x>FW-BALL_R){b.x=FW-BALL_R;b.vx=-Math.abs(b.vx);}
+    hitBike(0);hitBike(1);
+    if(b.y>FH-40){scorePoint(1);return;}
+    if(b.y<40){scorePoint(0);return;}
+  }
+  b.rot+=b.vx*dt/55;
+}
+/*CORE-END*/
+
+const $=id=>document.getElementById(id);
+const video=$("video"),cv=$("cv"),ctx=cv.getContext("2d");
+const QUAL={stable:{w:720,h:1280,cam:[1280,720],vbr:8000000},max:{w:1080,h:1920,cam:[1920,1080],vbr:16000000}};
+let Q=QUAL.stable,mode=1,wantAudio=true,landmarker=null,stream=null,camOK=false,facing="user";
+let lastTime=-1,lastDet=0,wl=null,started=false,lastT=performance.now(),bottleLogo=null;
+const inputs=[{t:-9999,roll:0},{t:-9999,roll:0}];
+const view={fx:0,fy:0,sc:1,W:720,H:1280};
+let ptrX=null;
+
+/* ---------- Logo du bidon ---------- */
+$("logo").onchange=e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const url=URL.createObjectURL(f),im=new Image();
+  im.onload=()=>{bottleLogo=im;$("logostatus").textContent="Logo ajouté";};
+  im.onerror=()=>{$("logostatus").textContent="Image illisible";};
+  im.src=url;
+};
+
+/* ---------- Caméra + suivi du visage ---------- */
+async function openCamera(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  const v={facingMode:facing,width:{ideal:Q.cam[0]},height:{ideal:Q.cam[1]},frameRate:{ideal:30}};
+  try{stream=await navigator.mediaDevices.getUserMedia({video:v,audio:wantAudio?{echoCancellation:true,noiseSuppression:true}:false});}
+  catch(e){
+    if(!wantAudio)throw e;
+    wantAudio=false;stream=await navigator.mediaDevices.getUserMedia({video:v,audio:false});
+  }
+  video.srcObject=stream;await video.play();camOK=true;
+}
+async function loadTracker(){
+  const fs=await FilesetResolver.forVisionTasks(WASM);
+  const opts=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numFaces:mode===2?2:1});
+  try{landmarker=await FaceLandmarker.createFromOptions(fs,opts("GPU"));}
+  catch(e){landmarker=await FaceLandmarker.createFromOptions(fs,opts("CPU"));}
+}
+const setStatus=t=>{$("status").textContent=t;};
+function readOptions(){mode=+$("mode").value;Q=QUAL[$("quality").value]||QUAL.stable;wantAudio=$("withmic").checked;}
+
+$("startcam").onclick=async()=>{
+  readOptions();
+  $("startcam").disabled=true;$("nocam").disabled=true;
+  setStatus("Autorise la caméra quand le navigateur le demande…");
+  try{await openCamera();}
+  catch(e){setStatus("Caméra refusée ou indisponible. Vérifie l'autorisation du site, ou joue sans caméra.");$("startcam").disabled=false;$("nocam").disabled=false;return;}
+  setStatus("Chargement du suivi du visage…");
+  try{await loadTracker();}
+  catch(e){setStatus("Suivi du visage non chargé (connexion ?). Tu pourras jouer au doigt.");await new Promise(r=>setTimeout(r,1800));}
+  begin();
+};
+$("nocam").onclick=()=>{readOptions();camOK=false;begin();};
+$("flip").onclick=async()=>{
+  if(!camOK||rec.on)return;
+  facing=facing==="user"?"environment":"user";
+  try{await openCamera();}catch(e){facing=facing==="user"?"environment":"user";}
+};
+$("again").onclick=()=>newMatch();
+$("stage").addEventListener("click",e=>{if(G.phase==="over"&&e.target===cv)newMatch();});
+
+async function keepAwake(){
+  try{if("wakeLock" in navigator&&!wl){wl=await navigator.wakeLock.request("screen");wl.addEventListener("release",()=>{wl=null;});}}catch(e){}
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&started)keepAwake();});
+async function begin(){
+  keepAwake();
+  $("intro").hidden=true;
+  try{await document.fonts.load('800 24px "Big Shoulders Display"');}catch(e){}
+  newMatch();
+  if(!started){started=true;requestAnimationFrame(loop);}
+}
+
+/* Sans caméra : le vélo suit le doigt ou la souris */
+$("stage").addEventListener("pointermove",e=>{
+  if(camOK||!started)return;
+  const r=cv.getBoundingClientRect(),s=Math.max(r.width/view.W,r.height/view.H),ox=(r.width-view.W*s)/2;
+  ptrX=(((e.clientX-r.left-ox)/s)-view.fx)/view.sc;
+});
+
+/* ---------- Détection : inclinaison de la tête ---------- */
+function detect(now){
+  const res=landmarker.detectForVideo(video,now);
+  const fl=(res&&res.faceLandmarks)||[];if(!fl.length)return;
+  const W=cv.width,H=cv.height,mir=facing==="user";
+  const faces=fl.map(lm=>{
+    const P=i=>({x:(mir?1-lm[i].x:lm[i].x)*W,y:lm[i].y*H});
+    const a=P(234),b=P(454),top=P(10),chin=P(152);
+    return {cx:(a.x+b.x)/2,w:Math.hypot(b.x-a.x,b.y-a.y),rot:Math.atan2(top.x-chin.x,-(top.y-chin.y))};
+  });
+  const set=(k,f)=>{inputs[k].roll=f.rot;inputs[k].t=now;};
+  if(mode===2){
+    if(faces.length>=2){faces.sort((p,q)=>p.cx-q.cx);set(0,faces[0]);set(1,faces[1]);}
+    else set(faces[0].cx<W/2?0:1,faces[0]);
+  }else{faces.sort((p,q)=>q.w-p.w);set(0,faces[0]);}
+}
+
+/* ---------- Dessin ---------- */
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function line(c,pts,w,col){c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.lineWidth=w;c.strokeStyle=col;c.lineCap="round";c.lineJoin="round";c.stroke();}
+function wheel(c,x,y,ang){
+  c.beginPath();c.arc(x,y,24,0,7);c.lineWidth=5;c.strokeStyle="#0E0E12";c.stroke();
+  c.beginPath();c.arc(x,y,20,0,7);c.lineWidth=1.6;c.strokeStyle="rgba(255,255,255,.8)";c.stroke();
+  c.lineWidth=1;c.strokeStyle="rgba(255,255,255,.55)";
+  for(let i=0;i<8;i++){const a=ang+i*Math.PI/4;c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.cos(a)*20,y+Math.sin(a)*20);c.stroke();}
+}
+function drawBike(c,x,y,dir,ang,frame,accent,glow){
+  c.save();c.translate(x,y);c.scale(dir*1.3,1.3);
+  if(glow>0){c.beginPath();c.ellipse(0,26,90,12,0,0,7);c.fillStyle="rgba(255,255,255,"+(glow*2.2).toFixed(2)+")";c.fill();}
+  c.beginPath();c.ellipse(0,27,80,6,0,0,7);c.fillStyle="rgba(0,0,0,.28)";c.fill();
+  wheel(c,-52,0,ang);wheel(c,52,0,ang);
+  const BB=[-4,6],S=[-22,-40],H1=[34,-38],H2=[38,-24],R=[-52,0],F=[52,0];
+  line(c,[BB,H2],5,frame);line(c,[BB,S],5,frame);line(c,[S,H1],5,frame);line(c,[H1,H2],6,frame);
+  line(c,[BB,R],4,frame);line(c,[S,R],3,frame);line(c,[H2,F],4,frame);
+  line(c,[[-2,3],[30,-18]],2.4,accent);
+  line(c,[S,[-24,-46]],3,"#1B1B22");line(c,[[-32,-47],[-14,-47]],5,"#1B1B22");
+  line(c,[H1,[42,-45]],4,"#1B1B22");
+  c.beginPath();c.moveTo(42,-45);c.lineTo(50,-46);c.quadraticCurveTo(58,-45,57,-34);c.lineWidth=4;c.strokeStyle="#1B1B22";c.lineCap="round";c.stroke();
+  c.beginPath();c.arc(BB[0],BB[1],6,0,7);c.fillStyle="#9AA0B5";c.fill();
+  const pa=ang*1.6;line(c,[BB,[BB[0]+Math.cos(pa)*13,BB[1]+Math.sin(pa)*13]],3,"#1B1B22");
+  c.restore();
+}
+function drawBottle(c,x,y,rot){
+  c.save();c.translate(x,y);c.rotate(rot);c.scale(.95,.95);
+  c.shadowColor="rgba(0,0,0,.4)";c.shadowBlur=14;c.shadowOffsetY=6;
+  const g=c.createLinearGradient(-19,0,19,0);g.addColorStop(0,"#DDE3F2");g.addColorStop(.45,"#FFFFFF");g.addColorStop(1,"#C9D1E8");
+  rr(c,-19,-40,38,84,10);c.fillStyle=g;c.fill();
+  c.shadowColor="transparent";
+  c.save();rr(c,-19,-40,38,84,10);c.clip();
+  c.fillStyle="#0B2E6F";c.fillRect(-19,-14,38,46);
+  c.fillStyle="#E2231A";c.fillRect(-19,-20,38,5);
+  c.fillStyle="#E2231A";c.fillRect(-19,36,38,8);
+  if(bottleLogo){
+    const w=30,h=36,ar=bottleLogo.width/bottleLogo.height;let dw=w,dh=w/ar;if(dh>h){dh=h;dw=h*ar;}
+    c.drawImage(bottleLogo,-dw/2,9-dh/2,dw,dh);
+  }else{
+    c.fillStyle="#fff";c.font='800 17px "Big Shoulders Display","Arial Narrow",sans-serif';c.textAlign="center";c.textBaseline="middle";c.fillText("FDJ",0,9);
+  }
+  c.restore();
+  c.fillStyle="#0A1F4D";rr(c,-11,-56,22,18,5);c.fill();
+  c.fillStyle="#E2231A";rr(c,-6,-67,12,13,3);c.fill();
+  c.fillStyle="rgba(255,255,255,.5)";rr(c,-14,-32,5,54,3);c.fill();
+  c.restore();
+}
+function bigText(c,t,x,y,size,align,alpha,mw){
+  c.save();c.textAlign=align;c.textBaseline="middle";
+  c.font=`900 ${size}px "Big Shoulders Display","Arial Narrow",Impact,sans-serif`;
+  c.lineWidth=size*.07;c.strokeStyle="rgba(8,12,40,.65)";c.strokeText(t,x,y,mw);
+  c.fillStyle="rgba(255,255,255,"+alpha+")";c.fillText(t,x,y,mw);c.restore();
+}
+function drawGame(c,m){
+  c.fillStyle="rgba(8,12,44,.30)";c.fillRect(0,0,FW,FH);
+  c.lineWidth=4;c.strokeStyle="rgba(255,255,255,.55)";c.strokeRect(2,2,FW-4,FH-4);
+  c.save();c.setLineDash([22,18]);c.lineWidth=4;c.strokeStyle="rgba(255,255,255,.6)";c.beginPath();c.moveTo(20,FH/2);c.lineTo(FW-20,FH/2);c.stroke();c.restore();
+  drawBike(c,G.bx[1],BY[1],G.dir[1],G.wheel[1],"#F2B318","#1B1B22",G.hit[1]);
+  drawBike(c,G.bx[0],BY[0],G.dir[0],G.wheel[0],"#0B2E6F","#E2231A",G.hit[0]);
+  if(G.phase!=="over")drawBottle(c,G.ball.x,G.ball.y,G.ball.rot);
+  if(G.phase!=="over"){
+    bigText(c,String(G.score[1]),FW-40,FH/2-80,150,"right",.9);
+    bigText(c,String(G.score[0]),FW-40,FH/2+80,150,"right",.9);
+  }
+  bigText(c,m===2?"J2":"ORDI",28,50,46,"left",.9);
+  bigText(c,m===2?"J1":"TOI",28,FH-50,46,"left",.9);
+  if(G.phase==="count")bigText(c,String(Math.max(1,Math.ceil(G.count))),FW/2,FH/2-230,230,"center",.95);
+  if(G.phase==="over"){
+    c.fillStyle="rgba(8,12,44,.62)";c.fillRect(0,FH/2-150,FW,300);
+    const who=G.winner===0?(m===2?"J1":"TU"):(m===2?"J2":"L'ORDI");
+    bigText(c,who+" GAGNE",FW/2,FH/2-20,150,"center",1,FW-60);
+    bigText(c,G.score[0]+" - "+G.score[1],FW/2,FH/2+90,90,"center",.9);
+  }
+}
+
+/* ---------- Boucle ---------- */
+function setHint(t){const h=$("hint");if(t){h.hidden=false;h.textContent=t;}else h.hidden=true;}
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(.05,Math.max(0,(now-lastT)/1000));lastT=now;
+  frame(now,dt);
+  if(rec.on)recordFrame();
+}
+function frame(now,dt){
+  const live=camOK&&video.readyState>=2&&video.videoWidth>0;
+  if(live){if(cv.width!==video.videoWidth||cv.height!==video.videoHeight){cv.width=video.videoWidth;cv.height=video.videoHeight;}}
+  else if(cv.width!==720||cv.height!==1280){cv.width=720;cv.height=1280;}
+  const W=cv.width,H=cv.height,mirror=facing==="user";
+  ctx.clearRect(0,0,W,H);
+  if(live){ctx.save();if(mirror){ctx.translate(W,0);ctx.scale(-1,1);}ctx.drawImage(video,0,0,W,H);ctx.restore();}
+  else{const g=ctx.createRadialGradient(W/2,H*.2,40,W/2,H*.2,H*.9);g.addColorStop(0,"#14306E");g.addColorStop(1,"#0B1230");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+  if(live&&landmarker&&video.currentTime!==lastTime&&now-lastDet>30){
+    lastTime=video.currentTime;lastDet=now;
+    try{detect(now);}catch(e){}
+  }
+  const fw=Math.min(W,H*9/16),fh=fw*16/9,fx=(W-fw)/2,fy=(H-fh)/2,sc=fw/FW;
+  Object.assign(view,{fx,fy,sc,W,H});
+
+  /* entrées */
+  const m=camOK&&landmarker?mode:1,lim=(FW-BW)/2-10;
+  let ok;
+  if(camOK&&landmarker){
+    const p0=now-inputs[0].t<700,p1=now-inputs[1].t<700;
+    ok=m===2?(p0&&p1):p0;
+    if(p0)G.bt[0]=FW/2+clamp(inputs[0].roll/.33,-1,1)*lim;
+    if(m===2&&p1)G.bt[1]=FW/2+clamp(inputs[1].roll/.33,-1,1)*lim;
+  }else{
+    ok=true;
+    if(ptrX!==null)G.bt[0]=clamp(ptrX,BW/2+8,FW-BW/2-8);
+  }
+  step(dt,ok,m===1?{speed:430}:null);
+
+  if(fw<W){ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(0,0,fx,H);ctx.fillRect(fx+fw,0,W-fx-fw,H);}
+  ctx.save();ctx.translate(fx,fy);ctx.scale(sc,sc);ctx.beginPath();ctx.rect(0,0,FW,FH);ctx.clip();
+  drawGame(ctx,m);ctx.restore();
+
+  if(!ok)setHint(m===2?"Il faut deux visages dans le cadre":"Place ton visage dans le cadre");
+  else if(G.phase==="over")setHint("Touche l'écran ou « Rejouer »");
+  else if(!camOK)setHint("Fais glisser ton doigt pour bouger le vélo");
+  else if(camOK&&!landmarker)setHint("Suivi du visage indisponible : joue au doigt");
+  else setHint("");
+}
+
+/* ---------- Enregistrement vidéo ---------- */
+const rec={on:false,mr:null,chunks:[],canvas:document.createElement("canvas"),t0:0,timer:null,url:null,file:null,failed:false,done:false,elapsed:0};
+rec.ctx=rec.canvas.getContext("2d");
+function pickMime(){
+  if(!window.MediaRecorder)return null;
+  const c=["video/mp4;codecs=avc1.640028,mp4a.40.2","video/mp4;codecs=avc1.4D0028,mp4a.40.2","video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+  return c.find(m=>MediaRecorder.isTypeSupported(m))||"";
+}
+function recordFrame(){
+  const c=rec.ctx,W=rec.canvas.width,H=rec.canvas.height;
+  const sw=cv.width,sh=cv.height,tr=W/H,sr=sw/sh;
+  let cx=0,cy=0,cw=sw,ch=sh;
+  if(sr>tr){cw=sh*tr;cx=(sw-cw)/2;}else{ch=sw/tr;cy=(sh-ch)/2;}
+  c.imageSmoothingQuality="high";
+  c.drawImage(cv,cx,cy,cw,ch,0,0,W,H);
+}
+function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function startRec(){
+  const mime=pickMime();
+  if(mime===null){setHint("Enregistrement non pris en charge par ce navigateur");return;}
+  rec.canvas.width=Q.w;rec.canvas.height=Q.h;
+  recordFrame();
+  const out=rec.canvas.captureStream(30);
+  if(stream)stream.getAudioTracks().forEach(t=>out.addTrack(t));
+  rec.chunks=[];
+  const opts={videoBitsPerSecond:Q.vbr,audioBitsPerSecond:192000};if(mime)opts.mimeType=mime;
+  rec.mr=new MediaRecorder(out,opts);
+  rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
+  rec.failed=false;rec.done=false;
+  rec.mr.onerror=()=>{rec.failed=true;stopRec();};
+  rec.mr.onstop=()=>{if(rec.on){rec.failed=true;stopRec();}if(!rec.done){rec.done=true;showResult();}};
+  rec.mr.start(1000);
+  rec.on=true;rec.t0=Date.now();
+  const b=$("rec");b.classList.add("rec-on");b.textContent="■ 00:00";
+  $("flip").disabled=true;
+  rec.timer=setInterval(()=>{b.textContent="■ "+fmt(Date.now()-rec.t0);},500);
+}
+function stopRec(){
+  if(!rec.on)return;
+  rec.elapsed=Date.now()-rec.t0;
+  rec.on=false;clearInterval(rec.timer);
+  const b=$("rec");b.classList.remove("rec-on");b.textContent="● Enregistrer";$("flip").disabled=false;
+  try{rec.mr.stop();}catch(e){}
+}
+function showResult(){
+  const type=(rec.mr&&rec.mr.mimeType)||"video/webm";
+  const ext=type.includes("mp4")?"mp4":"webm";
+  const d=new Date(),pad=n=>String(n).padStart(2,"0");
+  const name=`bidon-pong-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
+  const blob=new Blob(rec.chunks,{type});
+  if(rec.url)URL.revokeObjectURL(rec.url);
+  rec.url=URL.createObjectURL(blob);
+  rec.file=new File([blob],name,{type});
+  $("preview").src=rec.url;
+  const dl=$("dl");dl.href=rec.url;dl.setAttribute("download",name);
+  $("share").hidden=!(navigator.canShare&&navigator.canShare({files:[rec.file]}));
+  const info="Format Reel 9:16, "+rec.canvas.width+" × "+rec.canvas.height+", "+ext.toUpperCase()+", "+(blob.size/1048576).toFixed(1)+" Mo. Durée enregistrée : "+fmt(rec.elapsed||0)+"."+(ext==="webm"?" Ce navigateur ne produit pas de MP4 : Instagram peut refuser le WebM, réessaie avec Chrome à jour ou convertis le fichier.":"")+(rec.failed?" ⚠ L'enregistrement a été interrompu par le navigateur avant la fin.":"");
+  $("resinfo").textContent=info;
+  const pv=$("preview");
+  pv.onloadedmetadata=()=>{
+    const dd=pv.duration,real=(rec.elapsed||0)/1000;
+    if(isFinite(dd)&&real>3&&dd<real*.8)$("resinfo").textContent=info+" ⚠ La vidéo ne dure que "+Math.round(dd)+" s sur "+Math.round(real)+" s : l'encodage du téléphone a décroché. Choisis la qualité Stable.";
+  };
+  $("result").hidden=false;
+}
+$("rec").onclick=()=>{rec.on?stopRec():startRec();};
+$("share").onclick=async()=>{try{await navigator.share({files:[rec.file],title:"Bidon Pong"});}catch(e){}};
+$("redo").onclick=()=>{$("preview").pause();$("result").hidden=true;};
+</script>
+</body>
+</html>
