@@ -44,6 +44,7 @@ button{
   font:600 15px var(--body);color:var(--ink);background:rgba(20,15,50,.78);border:1.5px solid var(--line);border-radius:10px;
   padding:0 14px;min-height:48px;cursor:pointer;backdrop-filter:blur(6px)
 }
+select{font:inherit;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:#1B1540;color:var(--ink)}
 button.rec-on{background:#D7263D;border-color:#D7263D;color:#fff}
 .btnlink{display:inline-flex;align-items:center;justify-content:center;font:600 15px var(--body);border-radius:10px;border:1.5px solid var(--line);padding:0 14px;min-height:48px;text-decoration:none;color:var(--ink);background:rgba(20,15,50,.78)}
 .btnlink.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
@@ -118,6 +119,7 @@ p{margin:0;color:var(--muted);line-height:1.5}
       <button class="primary" id="startcam" type="button">Activer la caméra</button>
       <button id="nocam" type="button">Jouer sans caméra</button>
     </div>
+    <label class="toggle" for="quality">Qualité <select id="quality"><option value="stable" selected>Stable · 720 × 1280</option><option value="max">Maximale · 1080 × 1920 (plus lourd)</option></select></label>
     <label class="toggle" for="withmic"><input id="withmic" type="checkbox" checked> Enregistrer aussi le son (micro)</label>
     <div class="status" id="status" role="status"></div>
   </div>
@@ -264,12 +266,13 @@ $("closeimgs").onclick=()=>{$("imgs").hidden=true;newGame();};
 
 /* ---------- Caméra + suivi du visage ---------- */
 const video=$("video"),cv=$("cv"),ctx=cv.getContext("2d");
-let wantAudio=true,landmarker=null,stream=null,camOK=false,facing="user",lastTime=-1,faceSeen=false;
+const QUAL={stable:{w:720,h:1280,cam:[1280,720],vbr:8000000},max:{w:1080,h:1920,cam:[1920,1080],vbr:16000000}};
+let Q=QUAL.stable,lastDet=0,wl=null,wantAudio=true,landmarker=null,stream=null,camOK=false,facing="user",lastTime=-1,faceSeen=false;
 const pose={x:0,y:0,w:0,rot:0,init:false};
 
 async function openCamera(){
   if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  const v={facingMode:facing,width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30}};
+  const v={facingMode:facing,width:{ideal:Q.cam[0]},height:{ideal:Q.cam[1]},frameRate:{ideal:30}};
   try{stream=await navigator.mediaDevices.getUserMedia({video:v,audio:wantAudio?{echoCancellation:true,noiseSuppression:true}:false});}
   catch(e){
     if(!wantAudio)throw e;
@@ -286,7 +289,7 @@ async function loadTracker(){
 function setStatus(t){$("status").textContent=t;}
 
 $("startcam").onclick=async()=>{
-  wantAudio=$("withmic").checked;
+  wantAudio=$("withmic").checked;Q=QUAL[$("quality").value]||QUAL.stable;
   $("startcam").disabled=true;$("nocam").disabled=true;
   setStatus("Autorise la caméra quand le navigateur le demande…");
   try{await openCamera();}
@@ -296,7 +299,7 @@ $("startcam").onclick=async()=>{
   catch(e){setStatus("Suivi du visage non chargé (connexion ?). La carte restera fixe à l'écran.");await new Promise(r=>setTimeout(r,1800));}
   begin();
 };
-$("nocam").onclick=()=>{camOK=false;begin();};
+$("nocam").onclick=()=>{camOK=false;Q=QUAL[$("quality").value]||QUAL.stable;begin();};
 $("flip").onclick=async()=>{
   if(!camOK||rec.on)return;
   facing=facing==="user"?"environment":"user";
@@ -305,7 +308,12 @@ $("flip").onclick=async()=>{
 $("again").onclick=newGame;$("replay").onclick=newGame;$("undo").onclick=undo;
 
 let started=false;
+async function keepAwake(){
+  try{if("wakeLock" in navigator&&!wl){wl=await navigator.wakeLock.request("screen");wl.addEventListener("release",()=>{wl=null;});}}catch(e){}
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&started)keepAwake();});
 async function begin(){
+  keepAwake();
   $("intro").hidden=true;
   try{await document.fonts.load('800 24px "Big Shoulders Display"');}catch(e){}
   await Promise.all(defaults.map(loadPhoto));
@@ -355,8 +363,8 @@ function drawFrame(){
   if(!state.cur){$("hint").hidden=true;return;}
 
   let target=null;
-  if(live&&landmarker&&video.currentTime!==lastTime){
-    lastTime=video.currentTime;
+  if(live&&landmarker&&video.currentTime!==lastTime&&performance.now()-lastDet>30){
+    lastTime=video.currentTime;lastDet=performance.now();
     try{
       const res=landmarker.detectForVideo(video,performance.now());
       const lm=res&&res.faceLandmarks&&res.faceLandmarks[0];
@@ -434,15 +442,17 @@ function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).pad
 function startRec(){
   const mime=pickMime();
   if(mime===null){const h=$("hint");h.hidden=false;h.textContent="Enregistrement non pris en charge par ce navigateur";return;}
-  rec.canvas.width=1080;rec.canvas.height=1920;
+  rec.canvas.width=Q.w;rec.canvas.height=Q.h;
   recordFrame();
   const out=rec.canvas.captureStream(30);
   if(stream)stream.getAudioTracks().forEach(t=>out.addTrack(t));
   rec.chunks=[];
-  const opts={videoBitsPerSecond:16000000,audioBitsPerSecond:192000};if(mime)opts.mimeType=mime;
+  const opts={videoBitsPerSecond:Q.vbr,audioBitsPerSecond:192000};if(mime)opts.mimeType=mime;
   rec.mr=new MediaRecorder(out,opts);
   rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
-  rec.mr.onstop=showResult;
+  rec.failed=false;rec.done=false;
+  rec.mr.onerror=()=>{rec.failed=true;stopRec();};
+  rec.mr.onstop=()=>{if(rec.on){rec.failed=true;stopRec();}if(!rec.done){rec.done=true;showResult();}};
   rec.mr.start(1000);
   rec.on=true;rec.t0=Date.now();
   const b=$("rec");b.classList.add("rec-on");b.textContent="■ 00:00";
@@ -451,6 +461,7 @@ function startRec(){
 }
 function stopRec(){
   if(!rec.on)return;
+  rec.elapsed=Date.now()-rec.t0;
   rec.on=false;clearInterval(rec.timer);
   const b=$("rec");b.classList.remove("rec-on");b.textContent="● Enregistrer";$("flip").disabled=false;
   try{rec.mr.stop();}catch(e){}
@@ -468,7 +479,13 @@ function showResult(){
   const dl=$("dl");dl.href=rec.url;dl.setAttribute("download",name);
   const canShare=!!(navigator.canShare&&navigator.canShare({files:[rec.file]}));
   $("share").hidden=!canShare;
-  $("resinfo").textContent="Format Reel 9:16, 1080 × 1920, "+ext.toUpperCase()+", "+(blob.size/1048576).toFixed(1)+" Mo."+(ext==="webm"?" Ce navigateur ne produit pas de MP4 : Instagram peut refuser le WebM, réessaie avec Chrome à jour ou convertis le fichier.":"");
+  const info="Format Reel 9:16, "+rec.canvas.width+" × "+rec.canvas.height+", "+ext.toUpperCase()+", "+(blob.size/1048576).toFixed(1)+" Mo. Durée enregistrée : "+fmt(rec.elapsed||0)+"."+(ext==="webm"?" Ce navigateur ne produit pas de MP4 : Instagram peut refuser le WebM, réessaie avec Chrome à jour ou convertis le fichier.":"")+(rec.failed?" ⚠ L'enregistrement a été interrompu par le navigateur avant la fin.":"");
+  $("resinfo").textContent=info;
+  const pv=$("preview");
+  pv.onloadedmetadata=()=>{
+    const d=pv.duration,real=(rec.elapsed||0)/1000;
+    if(isFinite(d)&&real>3&&d<real*.8)$("resinfo").textContent=info+" ⚠ La vidéo ne dure que "+Math.round(d)+" s sur "+Math.round(real)+" s : l'encodage du téléphone a décroché. Choisis la qualité Stable.";
+  };
   $("result").hidden=false;
 }
 $("rec").onclick=()=>{rec.on?stopRec():startRec();};
