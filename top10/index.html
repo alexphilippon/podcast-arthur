@@ -269,7 +269,7 @@ const pose={x:0,y:0,w:0,rot:0,init:false};
 
 async function openCamera(){
   if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  const v={facingMode:facing,width:{ideal:1280},height:{ideal:720}};
+  const v={facingMode:facing,width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30}};
   try{stream=await navigator.mediaDevices.getUserMedia({video:v,audio:wantAudio?{echoCancellation:true,noiseSuppression:true}:false});}
   catch(e){
     if(!wantAudio)throw e;
@@ -393,7 +393,7 @@ const rec={on:false,mr:null,chunks:[],canvas:document.createElement("canvas"),t0
 rec.ctx=rec.canvas.getContext("2d");
 function pickMime(){
   if(!window.MediaRecorder)return null;
-  const c=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+  const c=["video/mp4;codecs=avc1.640028,mp4a.40.2","video/mp4;codecs=avc1.4D0028,mp4a.40.2","video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
   return c.find(m=>MediaRecorder.isTypeSupported(m))||"";
 }
 function drawLadderOn(c,W,H){
@@ -418,7 +418,11 @@ function drawLadderOn(c,W,H){
 }
 function recordFrame(){
   const c=rec.ctx,W=rec.canvas.width,H=rec.canvas.height;
-  c.drawImage(cv,0,0,W,H);
+  const sw=cv.width,sh=cv.height,tr=W/H,sr=sw/sh;
+  let cx=0,cy=0,cw=sw,ch=sh;
+  if(sr>tr){cw=sh*tr;cx=(sw-cw)/2;}else{ch=sw/tr;cy=(sh-ch)/2;}
+  c.imageSmoothingQuality="high";
+  c.drawImage(cv,cx,cy,cw,ch,0,0,W,H);
   drawLadderOn(c,W,H);
   if(!state.cur){
     c.save();c.textAlign="center";c.textBaseline="middle";c.fillStyle="#fff";c.shadowColor="rgba(0,0,0,.85)";c.shadowBlur=H*.015;
@@ -430,12 +434,12 @@ function fmt(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).pad
 function startRec(){
   const mime=pickMime();
   if(mime===null){const h=$("hint");h.hidden=false;h.textContent="Enregistrement non pris en charge par ce navigateur";return;}
-  rec.canvas.width=cv.width;rec.canvas.height=cv.height;
-  rec.ctx.drawImage(cv,0,0);
+  rec.canvas.width=1080;rec.canvas.height=1920;
+  recordFrame();
   const out=rec.canvas.captureStream(30);
   if(stream)stream.getAudioTracks().forEach(t=>out.addTrack(t));
   rec.chunks=[];
-  const opts={videoBitsPerSecond:5000000};if(mime)opts.mimeType=mime;
+  const opts={videoBitsPerSecond:16000000,audioBitsPerSecond:192000};if(mime)opts.mimeType=mime;
   rec.mr=new MediaRecorder(out,opts);
   rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
   rec.mr.onstop=showResult;
@@ -464,7 +468,7 @@ function showResult(){
   const dl=$("dl");dl.href=rec.url;dl.setAttribute("download",name);
   const canShare=!!(navigator.canShare&&navigator.canShare({files:[rec.file]}));
   $("share").hidden=!canShare;
-  $("resinfo").textContent=(ext==="webm"?"Format WebM : si le réseau social le refuse, convertis-la en MP4. ":"")+"Taille : "+(blob.size/1048576).toFixed(1)+" Mo.";
+  $("resinfo").textContent="Format Reel 9:16, 1080 × 1920, "+ext.toUpperCase()+", "+(blob.size/1048576).toFixed(1)+" Mo."+(ext==="webm"?" Ce navigateur ne produit pas de MP4 : Instagram peut refuser le WebM, réessaie avec Chrome à jour ou convertis le fichier.":"");
   $("result").hidden=false;
 }
 $("rec").onclick=()=>{rec.on?stopRec():startRec();};
