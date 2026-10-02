@@ -126,10 +126,15 @@ select,input[type=text],textarea{background:#203360;border-radius:4px}
   ${cfg.introExtra||""}
   <label class="field" for="partner">Partenaire affiché<input id="partner" type="text" maxlength="28" value="${(savedPartner!==null&&savedPartner!==undefined?savedPartner:(cfg.partner||"")).replace(/"/g,"&quot;")}" placeholder="Nom du partenaire (facultatif)"></label>
   <label class="field" for="quality">Qualité<select id="quality"><option value="stable" selected>Stable · 720 × 1280</option><option value="max">Maximale · 1080 × 1920 (plus lourd)</option></select></label>
-  <label class="field" for="autorec">Enregistrement<select id="autorec"><option value="1" selected>Automatique avec la partie</option><option value="0">Manuel (bouton)</option></select></label>
+  <input id="autorec" type="hidden" value="1">
   <label class="field" for="withmic"><input id="withmic" type="checkbox" checked> Enregistrer aussi le son (micro)</label>
   <div class="row"><button class="primary" id="startcam" type="button">Activer la caméra</button><button id="nocam" type="button">Jouer sans caméra</button></div>
   <div class="status" id="status" role="status"></div>
+</div></section>
+<section class="screen" id="ask" hidden><div class="inner">
+  <h2>Enregistrer la vidéo ?</h2>
+  <p>Voulez-vous enregistrer la vidéo ? Réponds <b>oui</b> si c'est pour livrer au CM.</p>
+  <div class="row"><button class="primary" id="askyes" type="button">Oui, enregistrer</button><button id="askno" type="button">Non</button></div>
 </div></section>
 <section class="screen" id="result" hidden><div class="inner">
   <h2>Ta vidéo</h2>
@@ -168,7 +173,15 @@ select,input[type=text],textarea{background:#203360;border-radius:4px}
     api.Q=Q;store("gfdj."+id+".partner",api.opts.partner);
     if(cfg.onStart)cfg.onStart(api);
   }
+  function askRec(){
+    return new Promise(res=>{
+      const a=$("ask");a.hidden=false;
+      const done=v=>{a.hidden=true;$("autorec").value=v?"1":"0";res();};
+      $("askyes").onclick=()=>done(true);$("askno").onclick=()=>done(false);
+    });
+  }
   $("startcam").onclick=async()=>{
+    await askRec();
     readOptions();$("startcam").disabled=true;$("nocam").disabled=true;
     setStatus("Autorise la caméra quand le navigateur le demande…");
     try{await openCamera();}
@@ -178,7 +191,7 @@ select,input[type=text],textarea{background:#203360;border-radius:4px}
     catch(e){lm=null;setStatus("Suivi du visage non chargé (connexion ?). Tu pourras jouer au doigt.");await new Promise(r=>setTimeout(r,1800));}
     begin();
   };
-  $("nocam").onclick=()=>{readOptions();api.camOK=false;begin();};
+  $("nocam").onclick=async()=>{await askRec();readOptions();api.camOK=false;begin();};
   $("flip").onclick=async()=>{
     if(!api.camOK||rec.on)return;
     facing=facing==="user"?"environment":"user";
