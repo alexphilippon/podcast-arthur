@@ -11,7 +11,10 @@ import {runGame,FW,FH,clamp,text,drawCover,loadFirst,withExts,initials} from "..
 
 /* Photos : jeux/photos/equipe/<slug>.jpg (sinon top10/photos/<slug>.jpg), jeux/photos/rivaux/<slug>.jpg */
 const AMIS=[["thibaut-pinot","Thibaut Pinot"],["arnaud-demare","Arnaud Démare"],["frederic-guesdon","Frédéric Guesdon"],["philippe-gilbert","Philippe Gilbert"],["bradley-mcgee","Bradley McGee"],["baden-cooke","Baden Cooke"],["david-gaudu","David Gaudu"],["sandy-casar","Sandy Casar"],["stefan-kung","Stefan Küng"],["arthur-vichot","Arthur Vichot"]];
-const RIVAUX=[["tadej-pogacar","Tadej Pogačar"],["jonas-vingegaard","Jonas Vingegaard"],["remco-evenepoel","Remco Evenepoel"],["mathieu-van-der-poel","Mathieu van der Poel"],["wout-van-aert","Wout van Aert"],["primoz-roglic","Primož Roglič"],["tom-pidcock","Tom Pidcock"],["mads-pedersen","Mads Pedersen"],["jasper-philipsen","Jasper Philipsen"],["julian-alaphilippe","Julian Alaphilippe"]];
+/* Rivaux : anciens de la maison, noms qui ressemblent à ceux de l'équipe, et quelques stars pour brouiller les pistes */
+const RIVAUX=[["guillaume-martin","Guillaume Martin"],["olivier-le-gac","Olivier Le Gac"],["nacer-bouhanni","Nacer Bouhanni"],["bradley-wiggins","Bradley Wiggins"],["alexandre-geniez","Alexandre Geniez"],["jake-stewart","Jake Stewart"],
+["arnaud-de-lie","Arnaud De Lie"],["thibau-nys","Thibau Nys"],["stefan-bissegger","Stefan Bissegger"],["sandy-dujardin","Sandy Dujardin"],["valentin-ferron","Valentin Ferron"],["david-de-la-cruz","David de la Cruz"],["frederik-frison","Frederik Frison"],["brandon-mcnulty","Brandon McNulty"],["phil-bauhaus","Phil Bauhaus"],
+["tadej-pogacar","Tadej Pogačar"],["jonas-vingegaard","Jonas Vingegaard"],["remco-evenepoel","Remco Evenepoel"],["mathieu-van-der-poel","Mathieu van der Poel"],["julian-alaphilippe","Julian Alaphilippe"]];
 const mk=(list,kind,bases)=>list.map(([slug,name])=>{
   const c={slug,name,kind,img:null,ini:initials(name)};
   loadFirst(bases.flatMap(b=>withExts(b+slug,["jpg","png","webp"]))).then(im=>{c.img=im;});
@@ -26,7 +29,7 @@ function start(){
   Object.assign(S,{t:0,time:DURATION,score:0,streak:0,items:[],spawn:.6,pops:[],over:false,shake:0,gobbed:0,beurk:0,missed:0,phase:"count",count:3,last:null});
 }
 function spawn(d){
-  const kind=Math.random()<.6?"ami":"rival",list=CARDS[kind];
+  const kind=Math.random()<.55?"ami":"rival",list=CARDS[kind];
   let c;do{c=list[Math.floor(Math.random()*list.length)];}while(c===S.last&&list.length>1);
   S.last=c;
   S.items.push({c,x:90+Math.random()*(FW-180),y:-R,vy:290+250*d+Math.random()*60,vx:(Math.random()-.5)*50,rot:(Math.random()-.5)*.6,vr:(Math.random()-.5)*1.4,eat:0,ex:0,ey:0});
@@ -82,13 +85,12 @@ function head(c,it,api){
   c.save();c.beginPath();c.arc(0,0,R,0,7);c.clip();
   if(k.img)drawCover(c,k.img,-R,-R,R*2,R*2);
   else{
-    const g=c.createLinearGradient(-R,-R,R,R);g.addColorStop(0,k.kind==="ami"?"#3A2A9A":"#8A2A2A");g.addColorStop(1,"#17113F");
+    const g=c.createLinearGradient(-R,-R,R,R);g.addColorStop(0,"#3A2A9A");g.addColorStop(1,"#17113F");
     c.fillStyle=g;c.fillRect(-R,-R,R*2,R*2);
     c.fillStyle="rgba(255,255,255,.22)";c.beginPath();c.arc(0,-8,R*.34,0,7);c.fill();c.beginPath();c.ellipse(0,R*.62,R*.62,R*.4,0,0,7);c.fill();
     text(c,k.ini,0,6,R*.7,{stroke:false,alpha:.95});
   }
   c.restore();
-  if(api.opts.aide!=="0"){c.lineWidth=7;c.strokeStyle=k.kind==="ami"?"#4C8DFF":"#FF4D4D";c.beginPath();c.arc(0,0,R,0,7);c.stroke();}
   c.lineWidth=3;c.strokeStyle="rgba(255,255,255,.9)";c.beginPath();c.arc(0,0,R+2,0,7);c.stroke();
   c.restore();
   if(it.eat===0)text(c,k.name,x,y+R+22,26,{maxw:230});
@@ -127,8 +129,7 @@ function draw(c,api,input){
 window.__gobe={S};
 runGame({
   id:"gobe",title:"Gobe-têtes",
-  intro:"Des têtes de coureurs de l'équipe tombent du ciel : ouvre la bouche pour les gober. Si c'est un coureur d'une autre équipe, ferme la bouche. 45 secondes.",
-  options:[{id:"aide",label:"Anneau de couleur (bleu = équipe, rouge = intrus)",def:"1",choices:[["1","Oui"],["0","Non, mode difficile"]]}],
+  intro:"Des têtes de coureurs de l'équipe tombent du ciel : ouvre la bouche pour les gober. Attention aux intrus : anciens de la maison, noms qui se ressemblent, autres équipes. Dans le doute, ferme la bouche. 45 secondes.",
   game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
 });
 </script>

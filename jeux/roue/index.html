@@ -10,19 +10,19 @@
 import {runGame,FW,FH,clamp,rr,text} from "../../shared/engine.js";
 
 /* Souffler (joues gonflées) pour gonfler une roue Miche. Rester dans la zone verte, sans faire éclater le pneu. */
-const LIMIT=50,NEED=12,CALIB_T=1.4;
+const LIMIT=28,NEED=6,CALIB_T=1;
 const ZONE=[7.2,8.4],BURST=9.8,GAIN=3.4,LEAK=.6,LEAK_EVENT=2.1;
 const SENS={faible:.8,normale:1,forte:1.3};
 const S={phase:"calib",calib:0,base:0,bn:0,t:0,P:2,inZone:0,leakT:0,leakNext:7,deadT:0,pops:0,boom:0,over:false,win:false,puff:0,doneAt:0,sens:1,spin:0,leakEvents:0};
 
 function start(api){
-  Object.assign(S,{phase:"calib",calib:0,base:0,bn:0,t:0,P:2,inZone:0,leakT:0,leakNext:5+Math.random()*3,deadT:0,pops:0,boom:0,over:false,win:false,puff:0,doneAt:0,sens:SENS[api.opts.sens]||1,spin:0,leakEvents:0});
+  Object.assign(S,{phase:"calib",calib:0,base:0,bn:0,t:0,P:2,inZone:0,leakT:0,leakNext:4+Math.random()*2,deadT:0,pops:0,boom:0,over:false,win:false,puff:0,doneAt:0,sens:SENS[api.opts.sens]||1,spin:0,leakEvents:0});
 }
 function step(dt,puff){
   S.puff=puff;S.t+=dt;S.boom=Math.max(0,S.boom-dt);
   if(S.deadT>0){S.deadT-=dt;S.P=Math.max(1.5,S.P);return;}
   S.leakNext-=dt;
-  if(S.leakNext<=0){S.leakT=3;S.leakNext=5+Math.random()*3;S.leakEvents++;}
+  if(S.leakNext<=0){S.leakT=2.5;S.leakNext=4+Math.random()*3;S.leakEvents++;}
   S.leakT=Math.max(0,S.leakT-dt);
   const leak=(S.P>2.5?LEAK:.15)+(S.leakT>0?LEAK_EVENT:0);
   S.P+=(GAIN*puff-leak)*dt;
@@ -126,7 +126,7 @@ function draw(c,api){
 window.__roue={S,step};
 runGame({
   id:"roue",title:"Gonflage de roue",partner:"Miche",
-  intro:"Gonfle une roue Miche en soufflant : joues gonflées, bouche en cul-de-poule. Maintiens l'aiguille dans la zone verte pendant 12 secondes en tout, sans dépasser 9,8 bar : le pneu éclate. Et ça fuit de temps en temps. 50 secondes.",
+  intro:"Gonfle une roue Miche en soufflant : joues gonflées, bouche en cul-de-poule. Maintiens l'aiguille dans la zone verte pendant 6 secondes en tout, sans dépasser 9,8 bar : le pneu éclate. Et ça fuit de temps en temps. 30 secondes maximum.",
   options:[{id:"sens",label:"Sensibilité du souffle",def:"normale",choices:[["faible","Faible (il faut bien gonfler)"],["normale","Normale"],["forte","Forte (le moindre souffle)"]]}],
   game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
 });
