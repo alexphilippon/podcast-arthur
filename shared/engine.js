@@ -8,6 +8,7 @@ const WASM="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 const QUAL={stable:{w:720,h:1280,cam:[1280,720],vbr:8000000},max:{w:1080,h:1920,cam:[1920,1080],vbr:16000000}};
 export const DISPLAY='"Big Shoulders Display","Arial Narrow",Impact,sans-serif';
+export const theme={display:DISPLAY,flat:false,bg:null};
 
 /* ---------- Utilitaires de dessin partagés ---------- */
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -20,9 +21,9 @@ export function drawCover(c,img,x,y,w,h){
   c.drawImage(img,sx,sy,sw,sh,x,y,w,h);
 }
 export function text(c,t,x,y,size,o={}){
-  const {align="center",alpha=1,color="#fff",maxw,weight=900,stroke="rgba(8,12,40,.7)",base="middle"}=o;
+  const {align="center",alpha=1,color="#fff",maxw,weight=theme.flat?400:900,stroke="rgba(8,12,40,.7)",base="middle"}=o;
   c.save();c.textAlign=align;c.textBaseline=base;c.globalAlpha=alpha;
-  c.font=`${weight} ${Math.round(size)}px ${DISPLAY}`;
+  c.font=`${weight} ${Math.round(size*(theme.flat?1.12:1))}px ${theme.display}`;
   if(stroke){c.lineWidth=Math.max(2,size*.08);c.strokeStyle=stroke;c.lineJoin="round";maxw?c.strokeText(t,x,y,maxw):c.strokeText(t,x,y);}
   c.fillStyle=color;maxw?c.fillText(t,x,y,maxw):c.fillText(t,x,y);
   c.restore();
@@ -33,7 +34,7 @@ export function wrapLines(c,t,maxw){
   if(cur)lines.push(cur);return lines;
 }
 export function textBlock(c,t,x,y,size,maxw,o={}){
-  c.save();c.font=`${o.weight||800} ${Math.round(size)}px ${DISPLAY}`;const lines=wrapLines(c,t,maxw);c.restore();
+  c.save();c.font=`${theme.flat?400:(o.weight||800)} ${Math.round(size*(theme.flat?1.12:1))}px ${theme.display}`;const lines=wrapLines(c,t,maxw);c.restore();
   const lh=(o.lh||1.05)*size,y0=y-(lines.length-1)*lh/2;
   lines.forEach((l,i)=>text(c,l,x,y0+i*lh,size,{...o,maxw}));
   return lines.length;
@@ -87,11 +88,25 @@ p{margin:0;color:var(--muted);line-height:1.5}
 `;
 
 export function runGame(cfg){
+  const GF=cfg.theme==="gfdj";
+  if(GF){theme.display='"Bebas Neue","Arial Narrow",Impact,sans-serif';theme.flat=true;
+    const im=new Image();im.onload=()=>{theme.bg=im;};im.src=new URL("./img/fond-sombre.jpg",import.meta.url).href;}
   const game=cfg.game,id=cfg.id||"jeu",home=cfg.home===undefined?"../":cfg.home;
   const fl=document.createElement("link");fl.rel="stylesheet";
   fl.href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap";
   document.head.appendChild(fl);
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
+  if(GF){const u=n=>new URL("./fonts/"+n,import.meta.url).href;const g=document.createElement("style");g.textContent=`
+@font-face{font-family:"Bebas Neue";src:url(${u("BebasNeue-Regular.ttf")});font-weight:400}
+@font-face{font-family:"Montserrat";src:url(${u("Montserrat-Regular.ttf")});font-weight:400 500}
+@font-face{font-family:"Montserrat";src:url(${u("Montserrat-Bold.ttf")});font-weight:600 900}
+:root{--bg:#1F294C;--ink:#fff;--muted:#D7DCE6;--accent:#E10819;--on-accent:#fff;--display:"Bebas Neue",Impact,sans-serif;--body:"Montserrat",system-ui,sans-serif}
+html,body{background:#1F294C}canvas{background:#1F294C}
+.screen{background:#1F294C url(${u("img/fond-sombre.jpg")}) center/cover}
+h1,h2{font-weight:400;letter-spacing:.01em}h1{font-size:clamp(54px,15vw,92px);line-height:.92}.kicker{font-weight:400;font-size:18px;letter-spacing:.12em}
+button,.btnlink,.filebtn{border-radius:4px;font-weight:700;background:rgba(31,41,76,.85)}
+select,input[type=text],textarea{background:#203360;border-radius:4px}
+#hint{border-radius:4px}`;document.head.appendChild(g);}
 
   const custom=(cfg.options||[]).map(o=>`<label class="field" for="opt-${o.id}">${o.label}<select id="opt-${o.id}">${o.choices.map(([v,l])=>`<option value="${v}"${v===o.def?" selected":""}>${l}</option>`).join("")}</select></label>`).join("");
   const savedPartner=store("gfdj."+id+".partner");
@@ -174,7 +189,7 @@ export function runGame(cfg){
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&started)keepAwake();});
   async function begin(){
     keepAwake();$("intro").hidden=true;
-    try{await document.fonts.load('800 24px "Big Shoulders Display"');}catch(e){}
+    try{await document.fonts.load(GF?'400 24px "Bebas Neue"':'800 24px "Big Shoulders Display"');}catch(e){}
     if(game.init)await game.init(api);
     startRound();
     if(!started){started=true;requestAnimationFrame(loop);}
@@ -272,6 +287,7 @@ export function runGame(cfg){
     ctx.clearRect(0,0,CW,CH);
     view.sc=CW/FW;view.fx=0;view.fy=0;view.vw=vw;view.vh=vh;view.cx=(vw-cwf)/2;view.cy=(vh-chf)/2;view.W=CW;view.H=CH;
     if(live){ctx.save();if(mir){ctx.translate(CW,0);ctx.scale(-1,1);}ctx.drawImage(video,view.cx,view.cy,cwf,chf,0,0,CW,CH);ctx.restore();}
+    else if(theme.bg){ctx.drawImage(theme.bg,0,0,CW,CH);}
     else{const g=ctx.createRadialGradient(CW/2,CH*.2,40,CW/2,CH*.2,CH*.9);g.addColorStop(0,"#14306E");g.addColorStop(1,"#0B1230");ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);}
     api.useFace=!!(api.camOK&&lm);
     if(live&&lm&&video.currentTime!==lastVT&&ts-lastDet>30){

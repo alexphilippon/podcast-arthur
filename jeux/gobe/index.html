@@ -7,7 +7,7 @@
 </head>
 <body>
 <script type="module">
-import {runGame,FW,FH,clamp,text,drawCover,loadFirst,withExts,initials} from "../../shared/engine.js";
+import {theme,runGame,FW,FH,clamp,text,drawCover,loadFirst,withExts,initials} from "../../shared/engine.js";
 
 /* Photos : jeux/photos/equipe/<slug>.jpg (sinon top10/photos/<slug>.jpg), jeux/photos/rivaux/<slug>.jpg */
 const slugOf=n=>n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"");
@@ -26,12 +26,16 @@ const DURATION=45,R=62;
 const S={t:0,time:DURATION,score:0,streak:0,items:[],spawn:0,pops:[],over:false,shake:0,gobbed:0,beurk:0,missed:0,phase:"count",count:3,last:null};
 
 function start(){
+  DECK.ami.length=0;DECK.rival.length=0;
   Object.assign(S,{t:0,time:DURATION,score:0,streak:0,items:[],spawn:.6,pops:[],over:false,shake:0,gobbed:0,beurk:0,missed:0,phase:"count",count:3,last:null});
 }
+const DECK={ami:[],rival:[]};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 function spawn(d){
   const kind=Math.random()<.55?"ami":"rival",list=CARDS[kind];
-  let c;do{c=list[Math.floor(Math.random()*list.length)];}while(c===S.last&&list.length>1);
-  S.last=c;
+  let q=DECK[kind];
+  if(!q.length){q.push(...shuffle(list.slice()));if(q[q.length-1]===S.last&&q.length>1)q.unshift(q.pop());}
+  const c=q.pop();S.last=c;
   S.items.push({c,x:90+Math.random()*(FW-180),y:-R,vy:290+250*d+Math.random()*60,vx:(Math.random()-.5)*50,rot:(Math.random()-.5)*.6,vr:(Math.random()-.5)*1.4,eat:0,ex:0,ey:0});
 }
 function pop(x,y,t,color){S.pops.push({x,y,t,color,age:0});}
@@ -63,10 +67,10 @@ function update(dt,input,api){
       if(it.c.kind==="ami"){
         S.gobbed++;S.streak++;
         const m=Math.min(5,1+Math.floor((S.streak-1)/3)),pts=10*m;
-        S.score+=pts;pop(it.x,it.y-40,"+"+pts+(m>1?"  ×"+m:""),"#7CFF9E");
+        S.score+=pts;pop(it.x,it.y-40,"+"+pts+(m>1?"  ×"+m:""),"#00B691");
       }else{
         S.beurk++;S.streak=0;S.score=Math.max(0,S.score-20);S.shake=.45;
-        pop(it.x,it.y-40,"BEURK −20","#FF6B6B");
+        pop(it.x,it.y-40,"BEURK −20","#E10819");
       }
     }
   }
@@ -81,11 +85,11 @@ function head(c,it,api){
   const k=it.c,sc=it.eat>0?Math.max(0,1-it.eat):1,x=it.eat>0?it.ex+((S.mouth?S.mouth.x:it.ex)-it.ex)*clamp(it.eat,0,1):it.x,y=it.eat>0?it.ey+((S.mouth?S.mouth.y:it.ey)-it.ey)*clamp(it.eat,0,1):it.y;
   c.save();c.translate(x,y);c.rotate(it.rot);c.scale(sc,sc);
   c.shadowColor="rgba(0,0,0,.45)";c.shadowBlur=18;c.shadowOffsetY=8;
-  c.beginPath();c.arc(0,0,R,0,7);c.fillStyle="#2A1A7A";c.fill();c.shadowColor="transparent";
+  c.beginPath();c.arc(0,0,R,0,7);c.fillStyle="#203360";c.fill();c.shadowColor="transparent";
   c.save();c.beginPath();c.arc(0,0,R,0,7);c.clip();
   if(k.img)drawCover(c,k.img,-R,-R,R*2,R*2);
   else{
-    const g=c.createLinearGradient(-R,-R,R,R);g.addColorStop(0,"#3A2A9A");g.addColorStop(1,"#17113F");
+    const g=c.createLinearGradient(-R,-R,R,R);g.addColorStop(0,"#203360");g.addColorStop(1,"#1F294C");
     c.fillStyle=g;c.fillRect(-R,-R,R*2,R*2);
     c.fillStyle="rgba(255,255,255,.22)";c.beginPath();c.arc(0,-8,R*.34,0,7);c.fill();c.beginPath();c.ellipse(0,R*.62,R*.62,R*.4,0,0,7);c.fill();
     text(c,k.ini,0,6,R*.7,{stroke:false,alpha:.95});
@@ -93,16 +97,16 @@ function head(c,it,api){
   c.restore();
   c.lineWidth=3;c.strokeStyle="rgba(255,255,255,.9)";c.beginPath();c.arc(0,0,R+2,0,7);c.stroke();
   c.restore();
-  if(it.eat===0)text(c,k.name,x,y+R+22,26,{maxw:230});
+  if(it.eat===0)text(c,k.name,x,y+R+24,32,{maxw:260});
 }
 function draw(c,api,input){
   const sh=S.shake>0?(Math.random()-.5)*18*S.shake/.45:0;
   c.save();c.translate(sh,sh*.6);
-  c.fillStyle="rgba(8,12,44,.22)";c.fillRect(-20,-20,FW+40,FH+40);
+  c.fillStyle="rgba(31,41,76,.15)";c.fillRect(-20,-20,FW+40,FH+40);
   for(const it of S.items)head(c,it,api);
   if(S.mouth&&S.phase==="play"&&!S.over){
     const m=S.mouth;
-    c.save();c.lineWidth=6;c.strokeStyle=m.open?"#7CFF9E":"rgba(255,255,255,.55)";c.setLineDash(m.open?[]:[10,10]);
+    c.save();c.lineWidth=6;c.strokeStyle=m.open?"#00B691":"rgba(255,255,255,.55)";c.setLineDash(m.open?[]:[10,10]);
     c.beginPath();c.arc(m.x,m.y,58+62*clamp(m.jaw,0,1),0,7);c.stroke();c.restore();
   }
   for(const p of S.pops){text(c,p.text||p.t,p.x,p.y-p.age*90,54,{color:p.color,alpha:1-p.age});}
@@ -110,17 +114,17 @@ function draw(c,api,input){
   text(c,String(Math.ceil(S.time)),52,66,86,{align:"left"});
   text(c,"SCORE",FW-40,40,26,{align:"right",alpha:.85});
   text(c,String(S.score),FW-40,92,76,{align:"right"});
-  if(S.streak>=3)text(c,"SÉRIE ×"+Math.min(5,1+Math.floor((S.streak-1)/3)),FW/2,66,42,{color:"#FFD84D"});
+  if(S.streak>=3)text(c,"SÉRIE ×"+Math.min(5,1+Math.floor((S.streak-1)/3)),FW/2,66,42,{color:"#FF9100"});
   if(S.phase==="count"){
     text(c,String(Math.max(1,Math.ceil(S.count))),FW/2,FH/2-150,230,{alpha:.95});
     text(c,"GOBE L'ÉQUIPE, PAS LES AUTRES",FW/2,FH/2+10,46,{maxw:FW-60});
     text(c,"BOUCHE OUVERTE = TU AVALES",FW/2,FH/2+64,34,{alpha:.85,maxw:FW-60});
   }
   if(S.over){
-    c.fillStyle="rgba(8,12,44,.7)";c.fillRect(0,FH/2-210,FW,430);
+    c.fillStyle="rgba(31,41,76,.85)";c.fillRect(0,FH/2-210,FW,430);
     const v=S.score>=300?"GLOUTON DE LÉGENDE":S.score>=180?"GRAND GOURMAND":S.score>=80?"APPÉTIT CORRECT":"À JEUN";
     text(c,v,FW/2,FH/2-130,86,{maxw:FW-50});
-    text(c,S.score+" POINTS",FW/2,FH/2-30,110,{color:"#FFD84D"});
+    text(c,S.score+" POINTS",FW/2,FH/2-30,110,{color:"#FF9100"});
     text(c,S.gobbed+" coureurs gobés",FW/2,FH/2+60,40,{alpha:.9});
     text(c,S.beurk+" intrus avalés · "+S.missed+" ratés",FW/2,FH/2+110,34,{alpha:.85,maxw:FW-60});
   }
@@ -128,8 +132,9 @@ function draw(c,api,input){
 }
 window.__gobe={S};
 runGame({
+  theme:"gfdj",
   id:"gobe",title:"Gobe-têtes",
-  intro:"Des têtes de coureurs tombent du ciel : gobe ceux qui ont couru pour l'équipe, laisse passer ceux qui n'y ont jamais couru. Dans le doute, réfléchis vite. 45 secondes.",
+  intro:"Des têtes de coureurs tombent du ciel : gobe les coureurs de l'équipe ou les anciens de l'équipe, pas les autres. 45 secondes.",
   game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
 });
 </script>
