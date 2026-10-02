@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Jeux caméra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B1230;--ink:#F2F4FF;--muted:#AEB8E6;--card:#141C4A;--line:rgba(255,255,255,.2);--accent:#FF5A3C;
+ --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;--body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);padding:max(24px,env(safe-area-inset-top)) 16px max(32px,env(safe-area-inset-bottom))}
+main{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.kicker{font:700 13px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font:900 clamp(46px,12vw,76px)/.9 var(--display);text-transform:uppercase;margin:6px 0 0}
+p{margin:0;color:var(--muted);line-height:1.5}
+ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+a.card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:16px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);color:inherit;text-decoration:none}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
+.name{font:800 30px/1 var(--display);text-transform:uppercase}
+.how{font:700 12px var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.desc{color:var(--muted);font-size:14px;line-height:1.45}
+.small{font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="kicker">Groupama-FDJ United</span>
+    <h1>Jeux caméra</h1>
+    <p>Cinq mini-jeux d'une minute maximum, jouables avec la caméra du téléphone. La partie s'enregistre en vidéo verticale, prête pour un Reel.</p>
+  </header>
+  <ul>
+    <li><a class="card" href="gobe/"><span class="how">Bouche</span><span class="name">Gobe-têtes</span><span class="desc">Des coureurs de l'équipe tombent du ciel : on les gobe. Les autres, on les évite.</span></a></li>
+    <li><a class="card" href="rire/"><span class="how">Sourire</span><span class="name">Interdit de rire</span><span class="desc">Des images défilent, tu as trois chances avant de craquer.</span></a></li>
+    <li><a class="card" href="cote/"><span class="how">Sourcils</span><span class="name">Course de côte</span><span class="desc">Un Wilier, un mur à 18 %, et des sourcils pour pédaler.</span></a></li>
+    <li><a class="card" href="roue/"><span class="how">Souffle</span><span class="name">Gonflage de roue</span><span class="desc">Une roue Miche à gonfler à la bouche, sans la faire éclater.</span></a></li>
+    <li><a class="card" href="preferes/"><span class="how">Inclinaison de la tête</span><span class="name">Tu préfères</span><span class="desc">Des dilemmes à trancher en silence, tête à gauche ou à droite.</span></a></li>
+  </ul>
+  <p class="small">Les photos se déposent dans les dossiers <code>jeux/photos/equipe</code>, <code>jeux/photos/rivaux</code> et <code>jeux/photos/rire</code>.</p>
+</main>
+</body>
+</html>

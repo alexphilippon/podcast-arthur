@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gonflage de roue</title>
+</head>
+<body>
+<script type="module">
+import {runGame,FW,FH,clamp,rr,text} from "../../shared/engine.js";
+
+/* Souffler (joues gonflées) pour gonfler une roue Miche. Rester dans la zone verte, sans faire éclater le pneu. */
+const LIMIT=50,NEED=12,CALIB_T=1.4;
+const ZONE=[7.2,8.4],BURST=9.8,GAIN=3.4,LEAK=.6,LEAK_EVENT=2.1;
+const SENS={faible:.8,normale:1,forte:1.3};
+const S={phase:"calib",calib:0,base:0,bn:0,t:0,P:2,inZone:0,leakT:0,leakNext:7,deadT:0,pops:0,boom:0,over:false,win:false,puff:0,doneAt:0,sens:1,spin:0,leakEvents:0};
+
+function start(api){
+  Object.assign(S,{phase:"calib",calib:0,base:0,bn:0,t:0,P:2,inZone:0,leakT:0,leakNext:5+Math.random()*3,deadT:0,pops:0,boom:0,over:false,win:false,puff:0,doneAt:0,sens:SENS[api.opts.sens]||1,spin:0,leakEvents:0});
+}
+function step(dt,puff){
+  S.puff=puff;S.t+=dt;S.boom=Math.max(0,S.boom-dt);
+  if(S.deadT>0){S.deadT-=dt;S.P=Math.max(1.5,S.P);return;}
+  S.leakNext-=dt;
+  if(S.leakNext<=0){S.leakT=3;S.leakNext=5+Math.random()*3;S.leakEvents++;}
+  S.leakT=Math.max(0,S.leakT-dt);
+  const leak=(S.P>2.5?LEAK:.15)+(S.leakT>0?LEAK_EVENT:0);
+  S.P+=(GAIN*puff-leak)*dt;
+  S.P=Math.max(1,S.P);
+  S.spin+=dt*(puff*8);
+  if(S.P>=BURST){S.pops++;S.boom=.9;S.P=1.5;S.deadT=1.4;}
+  if(S.P>=ZONE[0]&&S.P<=ZONE[1])S.inZone+=dt;
+  if(S.inZone>=NEED){S.over=true;S.win=true;S.doneAt=S.t;}
+  else if(S.t>=LIMIT){S.over=true;S.win=false;}
+}
+function update(dt,input,api){
+  if(S.over||!input.ok)return;
+  const f=api.useFace?input.faces[0]:null;
+  if(S.phase==="calib"){
+    S.calib+=dt;
+    if(f){S.bn++;S.base+=(f.puff-S.base)/S.bn;}
+    if(S.calib>=CALIB_T)S.phase="play";
+    return;
+  }
+  let puff=0;
+  if(f)puff=clamp((f.puff-S.base-.08/S.sens)/(.5/S.sens),0,1);
+  else if(input.pointer&&input.pointer.down)puff=.7;
+  step(dt,puff);
+}
+/* ---------- Dessin ---------- */
+function gauge(c,cx,cy,r){
+  c.save();c.translate(cx,cy);
+  c.beginPath();c.arc(0,0,r+14,Math.PI,0);c.lineTo(r+14,40);c.lineTo(-r-14,40);c.closePath();c.fillStyle="rgba(8,12,44,.78)";c.fill();
+  const a=v=>Math.PI+clamp(v/12,0,1)*Math.PI;
+  c.lineWidth=26;c.lineCap="butt";
+  c.beginPath();c.arc(0,0,r-8,a(0),a(ZONE[0]));c.strokeStyle="#4C6FFF";c.stroke();
+  c.beginPath();c.arc(0,0,r-8,a(ZONE[0]),a(ZONE[1]));c.strokeStyle="#35E07A";c.stroke();
+  c.beginPath();c.arc(0,0,r-8,a(ZONE[1]),a(BURST));c.strokeStyle="#FFB020";c.stroke();
+  c.beginPath();c.arc(0,0,r-8,a(BURST),a(12));c.strokeStyle="#FF3B3B";c.stroke();
+  c.fillStyle="#fff";c.font="700 22px sans-serif";c.textAlign="center";c.textBaseline="middle";
+  for(let v=0;v<=12;v+=2){const t=a(v);c.fillText(String(v),Math.cos(t)*(r-48),Math.sin(t)*(r-48));}
+  const n=a(S.P+(S.puff>.2?(Math.random()-.5)*.12:0));
+  c.lineWidth=7;c.lineCap="round";c.strokeStyle="#fff";c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(n)*(r-30),Math.sin(n)*(r-30));c.stroke();
+  c.beginPath();c.arc(0,0,13,0,7);c.fillStyle="#E2231A";c.fill();
+  c.restore();
+  text(c,S.P.toFixed(1)+" bar",cx,cy+8,52,{maxw:200});
+}
+function wheel(c,cx,cy){
+  const flat=clamp(S.P/8,0,1.2),ry=165*(.55+.45*Math.min(1,flat)),rx=185;
+  const wob=S.deadT>0?0:(S.P>9.4?Math.sin(S.t*60)*5:0);
+  c.save();c.translate(cx+wob,cy+(185-ry));
+  /* pneu */
+  c.beginPath();c.ellipse(0,0,rx,ry,0,0,7);c.lineWidth=34;c.strokeStyle="#0E0E12";c.stroke();
+  c.beginPath();c.ellipse(0,0,rx+10,ry+10,0,0,7);c.lineWidth=3;c.strokeStyle="rgba(255,255,255,.35)";c.stroke();
+  /* jante */
+  c.beginPath();c.ellipse(0,0,rx-26,ry-26,0,0,7);c.lineWidth=10;c.strokeStyle="#C9CFE0";c.stroke();
+  /* rayons */
+  c.lineWidth=2;c.strokeStyle="rgba(255,255,255,.65)";
+  for(let i=0;i<24;i++){const a=S.spin+i*Math.PI/12;c.beginPath();c.moveTo(Math.cos(a)*22,Math.sin(a)*22*(ry/rx));c.lineTo(Math.cos(a)*(rx-30),Math.sin(a)*(ry-30));c.stroke();}
+  /* moyeu */
+  c.beginPath();c.arc(0,0,26,0,7);c.fillStyle="#2A2F45";c.fill();c.lineWidth=4;c.strokeStyle="#C9CFE0";c.stroke();
+  /* nom de la marque sur la jante */
+  c.save();c.translate(0,-(ry-26));text(c,"MICHE",0,0,26,{stroke:false,color:"#1B1B22",weight:900});c.restore();
+  /* valve */
+  c.fillStyle="#C9CFE0";c.fillRect(-4,ry-26,8,40);
+  c.restore();
+  /* fuite */
+  if(S.leakT>0&&S.deadT<=0){
+    for(let i=0;i<7;i++){
+      const k=((S.t*2.2+i/7)%1);
+      c.beginPath();c.arc(cx+(Math.random()-.5)*10+k*(i%2?40:-40),cy+(185-ry)+ry+10-k*70,6+k*8,0,7);c.fillStyle="rgba(255,255,255,"+(.55*(1-k)).toFixed(2)+")";c.fill();
+    }
+  }
+}
+function draw(c,api){
+  c.fillStyle="rgba(8,12,44,.2)";c.fillRect(0,0,FW,FH);
+  text(c,"GONFLAGE DE ROUE",FW/2,56,58,{maxw:FW-60});
+  gauge(c,FW/2,330,200);
+  wheel(c,FW/2,700);
+  /* temps, zone */
+  text(c,S.phase==="calib"?"—":Math.max(0,LIMIT-S.t).toFixed(0)+" s",52,128,70,{align:"left"});
+  text(c,"SOUFFLE",56,968,26,{align:"left",alpha:.85});
+  rr(c,170,954,FW-230,28,14);c.fillStyle="rgba(8,12,44,.75)";c.fill();
+  rr(c,170,954,Math.max(28,(FW-230)*S.puff),28,14);c.fillStyle=S.puff>.1?"#FFD84D":"rgba(255,255,255,.25)";c.fill();
+  rr(c,60,1004,FW-120,34,17);c.fillStyle="rgba(8,12,44,.75)";c.fill();
+  rr(c,60,1004,Math.max(34,(FW-120)*clamp(S.inZone/NEED,0,1)),34,17);c.fillStyle="#35E07A";c.fill();
+  text(c,"TEMPS DANS LA ZONE VERTE  "+S.inZone.toFixed(1)+" / "+NEED+" s",FW/2,1062,30,{maxw:FW-80});
+  if(S.leakT>0&&S.deadT<=0)text(c,"FUITE ! SOUFFLE !",FW/2,480,60,{color:"#FF8A3C",maxw:FW-60});
+  if(S.boom>0){
+    c.fillStyle="rgba(255,255,255,"+(.7*S.boom/.9).toFixed(2)+")";c.fillRect(0,0,FW,FH);
+    text(c,"BOUM",FW/2,FH/2,230,{color:"#FF3B3B",alpha:Math.min(1,S.boom*2)});
+  }
+  if(S.phase==="calib"){
+    c.fillStyle="rgba(8,12,44,.6)";c.fillRect(0,430,FW,300);
+    text(c,"JOUES DÉTENDUES",FW/2,520,70,{maxw:FW-60});
+    text(c,"puis gonfle-les pour gonfler la roue",FW/2,605,34,{alpha:.9,maxw:FW-60});
+    text(c,String(Math.max(1,Math.ceil(CALIB_T-S.calib))),FW/2,680,80);
+  }
+  if(S.over){
+    c.fillStyle="rgba(8,12,44,.8)";c.fillRect(0,FH/2-210,FW,420);
+    text(c,S.win?"ROUE PRÊTE":"ROUE À PLAT",FW/2,FH/2-110,100,{color:S.win?"#7CFF9E":"#FF6B6B",maxw:FW-50});
+    text(c,S.win?"gonflée en "+S.doneAt.toFixed(1)+" s":S.inZone.toFixed(1)+" s dans la zone sur "+NEED,FW/2,FH/2-10,52,{maxw:FW-60});
+    text(c,S.pops+" éclatement"+(S.pops>1?"s":"")+" · "+S.leakEvents+" fuite"+(S.leakEvents>1?"s":""),FW/2,FH/2+70,40,{alpha:.9,maxw:FW-60});
+  }
+}
+window.__roue={S,step};
+runGame({
+  id:"roue",title:"Gonflage de roue",partner:"Miche",
+  intro:"Gonfle une roue Miche en soufflant : joues gonflées, bouche en cul-de-poule. Maintiens l'aiguille dans la zone verte pendant 12 secondes en tout, sans dépasser 9,8 bar : le pneu éclate. Et ça fuit de temps en temps. 50 secondes.",
+  options:[{id:"sens",label:"Sensibilité du souffle",def:"normale",choices:[["faible","Faible (il faut bien gonfler)"],["normale","Normale"],["forte","Forte (le moindre souffle)"]]}],
+  game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
+});
+</script>
+</body>
+</html>

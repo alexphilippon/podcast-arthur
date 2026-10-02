@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tu préfères</title>
+</head>
+<body>
+<script type="module">
+import {runGame,FW,FH,clamp,rr,text,textBlock,store} from "../../shared/engine.js";
+
+/* Tu préfères : on répond en silence en penchant la tête à gauche (A) ou à droite (B). */
+const DEFAULTS=`Trois heures de pluie glaciale | Trois heures de vent de face
+Plus jamais de café | Plus jamais de dessert
+Un col de 20 km à 7 % | Un mur de 500 m à 20 %
+Des pâtes tous les soirs | Du riz tous les midis
+Un transfert de 4 h en bus | Une étape de 250 km
+Un mécano qui chante tout le temps | Un DS qui commente tout à la radio
+Crever à 5 km de l'arrivée | Avoir faim à 5 km de l'arrivée sans un gel
+Se lever à 5 h pour un départ à 14 h | Se coucher à 22 h après une étape de 6 h
+Une grosse chaleur sans eau | Un froid glacial sans gants
+Gagner sans personne pour le voir | Perdre devant tout le monde
+Un vélo parfait mais une selle dure | Un vélo moyen mais une selle de rêve
+Un seul maillot pour toute la saison | Un seul type de barre énergétique`;
+const N=7,ASK_T=5,HOLD=.55,LEAN=.2,LOCK_T=1.1;
+const S={qs:[],i:0,tleft:ASK_T,hold:0,dir:0,lean:0,locked:null,lockT:0,answers:[],over:false,phase:"q"};
+let QS=[];
+
+function parse(txt){
+  return String(txt||"").split(/\n+/).map(l=>l.split("|").map(s=>s.trim())).filter(a=>a.length>=2&&a[0]&&a[1]).map(a=>({a:a[0],b:a[1]}));
+}
+function pick(){
+  let list=parse(document.getElementById("qtext")?document.getElementById("qtext").value:"");
+  if(list.length<3)list=parse(DEFAULTS);
+  for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
+  return list.slice(0,Math.min(N,list.length));
+}
+function start(){
+  Object.assign(S,{qs:pick(),i:0,tleft:ASK_T,hold:0,dir:0,lean:0,locked:null,lockT:0,answers:[],over:false,phase:"q"});
+}
+function answer(side,auto){
+  const q=S.qs[S.i];
+  S.locked=side;S.lockT=LOCK_T;S.phase="lock";
+  S.answers.push({side,text:side==="A"?q.a:q.b,auto:!!auto});
+}
+function update(dt,input,api){
+  if(S.over)return;
+  if(S.phase==="lock"){
+    S.lockT-=dt;
+    if(S.lockT<=0){
+      S.i++;
+      if(S.i>=S.qs.length){S.over=true;return;}
+      S.phase="q";S.tleft=ASK_T;S.hold=0;S.dir=0;S.locked=null;
+    }
+    return;
+  }
+  if(!input.ok)return;
+  const f=api.useFace?input.faces[0]:null;
+  let lean=0;
+  if(f)lean=f.roll;
+  else if(input.pointer&&input.pointer.down)lean=input.pointer.x<FW/2?-.4:.4;
+  S.lean+=(lean-S.lean)*Math.min(1,dt*14);
+  const d=S.lean<-LEAN?-1:S.lean>LEAN?1:0;
+  if(d!==0&&d===S.dir)S.hold+=dt;else S.hold=Math.max(0,S.hold-dt*2);
+  S.dir=d;
+  S.tleft-=dt;
+  if(S.hold>=HOLD&&d!==0){answer(d<0?"A":"B",false);return;}
+  if(S.tleft<=0)answer(Math.random()<.5?"A":"B",true);
+}
+function panel(c,x,y,w,h,label,t,state,prog,colors){
+  const grow=state==="lean"?1.05:state==="chosen"?1.08:state==="dim"?.94:1;
+  c.save();c.translate(x+w/2,y+h/2);c.scale(grow,grow);
+  rr(c,-w/2,-h/2,w,h,26);
+  const g=c.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,colors[0]);g.addColorStop(1,colors[1]);
+  c.globalAlpha=state==="dim"?.45:1;c.fillStyle=g;c.fill();
+  if(prog>0){c.save();rr(c,-w/2,-h/2,w,h,26);c.clip();c.fillStyle="rgba(255,255,255,.28)";c.fillRect(-w/2,h/2-h*prog,w,h*prog);c.restore();}
+  c.lineWidth=state==="chosen"?10:5;c.strokeStyle=state==="chosen"?"#FFD84D":"rgba(255,255,255,.9)";rr(c,-w/2,-h/2,w,h,26);c.stroke();
+  c.globalAlpha=1;
+  text(c,label,0,-h/2+54,80,{alpha:.95});
+  textBlock(c,t,0,18,50,w-50,{lh:1.1});
+  c.restore();
+}
+function draw(c,api,input){
+  c.fillStyle="rgba(8,12,44,.28)";c.fillRect(0,0,FW,FH);
+  if(S.over){
+    c.fillStyle="rgba(8,12,44,.82)";c.fillRect(0,150,FW,820);
+    text(c,"TES CHOIX",FW/2,225,92);
+    const y0=300,step=88;
+    S.answers.forEach((a,i)=>{
+      const y=y0+i*step;
+      text(c,a.side,60,y,56,{align:"left",color:a.side==="A"?"#6FA8FF":"#FF8A8A"});
+      textBlock(c,a.text+(a.auto?" (au hasard)":""),FW/2+30,y,34,FW-190,{lh:1});
+    });
+    return;
+  }
+  const q=S.qs[S.i];if(!q)return;
+  text(c,"TU PRÉFÈRES…",FW/2,64,76);
+  text(c,(S.i+1)+" / "+S.qs.length,FW/2,128,46,{alpha:.9});
+  const lockedA=S.locked==="A",lockedB=S.locked==="B";
+  const sA=S.phase==="lock"?(lockedA?"chosen":"dim"):(S.dir<0?"lean":"idle");
+  const sB=S.phase==="lock"?(lockedB?"chosen":"dim"):(S.dir>0?"lean":"idle");
+  const pr=clamp(S.hold/HOLD,0,1);
+  panel(c,22,250,326,600,"A",q.a,sA,S.dir<0&&S.phase==="q"?pr:0,["#1B3A8C","#14306E"]);
+  panel(c,372,250,326,600,"B",q.b,sB,S.dir>0&&S.phase==="q"?pr:0,["#B8273A","#7A1626"]);
+  /* temps */
+  const tr=S.phase==="q"?clamp(S.tleft/ASK_T,0,1):0;
+  rr(c,60,905,FW-120,16,8);c.fillStyle="rgba(8,12,44,.75)";c.fill();
+  rr(c,60,905,Math.max(16,(FW-120)*tr),16,8);c.fillStyle=tr<.3?"#FF6B6B":"#FFD84D";c.fill();
+  /* jauge d'inclinaison */
+  const gx=FW/2,gy=975,gw=520;
+  rr(c,gx-gw/2,gy-10,gw,20,10);c.fillStyle="rgba(8,12,44,.75)";c.fill();
+  c.fillStyle="rgba(255,255,255,.55)";
+  c.fillRect(gx-gw/2+gw*(.5-LEAN/1.0)-2,gy-18,4,36);c.fillRect(gx-gw/2+gw*(.5+LEAN/1.0)-2,gy-18,4,36);
+  const mx=gx+clamp(S.lean/.5,-1,1)*gw/2;
+  c.beginPath();c.arc(mx,gy,17,0,7);c.fillStyle=S.dir<0?"#6FA8FF":S.dir>0?"#FF8A8A":"#fff";c.fill();c.lineWidth=4;c.strokeStyle="#fff";c.stroke();
+  text(c,S.phase==="lock"?(S.locked==="A"?"← A":"B →"):"PENCHE LA TÊTE",gx,gy+54,34,{alpha:.9});
+}
+window.__pref={S,parse,DEFAULTS};
+runGame({
+  id:"preferes",title:"Tu préfères",
+  intro:"Sept dilemmes à choisir sans parler : penche la tête à gauche pour A, à droite pour B, et tiens la position une demi-seconde. Tu as 5 secondes par question, sinon le jeu tire au sort.",
+  introExtra:`<label class="field" for="qtext">Questions (une par ligne, « choix A | choix B »)</label><textarea id="qtext" spellcheck="false"></textarea><p class="small">Sept questions sont tirées au hasard dans cette liste. Elle est conservée sur cet appareil.</p>`,
+  onIntro:(api,$)=>{
+    const ta=$("qtext");const saved=store("gfdj.preferes.q");
+    ta.value=saved&&saved.trim()?saved:DEFAULTS;
+    ta.addEventListener("input",()=>store("gfdj.preferes.q",ta.value));
+  },
+  game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
+});
+</script>
+</body>
+</html>

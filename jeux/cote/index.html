@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Course de côte</title>
+</head>
+<body>
+<script type="module">
+import {runGame,FW,FH,clamp,rr,text,initials} from "../../shared/engine.js";
+
+/* Brow raise = coup de pédale. Les sourcils alternent haut / bas, le vélo (Wilier) grimpe, la pente s'aggrave. */
+const LIMIT=50,GHOST=40,CALIB_T=1.8;
+const KV_UP=.0120,KV_DN=.0074,DRAG=1.15,SLOPE_K=.0021,VMAX=.09,VMIN=-.02;
+const S={phase:"calib",calib:0,base:0,bn:0,t:0,p:0,v:0,hi:false,lastKick:-1,kicks:0,rate:0,over:false,win:false,wheel:0,done:0,sens:1,btn:false,flash:0};
+const SENS={faible:.8,normale:1,forte:1.3};
+const grade=p=>p<.3?6:p<.6?9:p<.85?12:18;      /* pente en % : le dernier tronçon est un mur */
+function kick(a){S.v=Math.min(VMAX,S.v+a);S.kicks++;S.rate=Math.min(8,S.rate+1);}
+function start(api){
+  Object.assign(S,{phase:"calib",calib:0,base:0,bn:0,t:0,p:0,v:0,hi:false,lastKick:-1,kicks:0,rate:0,over:false,win:false,wheel:0,done:0,sens:SENS[api.opts.sens]||1,btn:false,flash:0});
+}
+function step(dt,b,pointerDown,usePointer){
+  /* b : brow relevé net (visage) ; pointerDown : doigt */
+  const hiT=.28/S.sens,loT=.14/S.sens;
+  let up=S.hi;
+  if(usePointer){if(pointerDown&&!S.btn){S.btn=true;up=true;}if(!pointerDown&&S.btn){S.btn=false;up=false;}}
+  else{if(!S.hi&&b>hiT)up=true;if(S.hi&&b<loT)up=false;}
+  if(up!==S.hi&&S.t-S.lastKick>.08){S.hi=up;S.lastKick=S.t;kick(up?KV_UP:KV_DN);}
+  S.rate=Math.max(0,S.rate-dt*2.2);
+  const slope=SLOPE_K*grade(S.p)/6;
+  S.v+=(-slope-DRAG*S.v)*dt;
+  S.v=clamp(S.v,VMIN,VMAX);
+  S.p=clamp(S.p+S.v*dt,0,1.0);
+  S.wheel+=S.v*dt*900;
+}
+function update(dt,input,api){
+  S.flash=Math.max(0,S.flash-dt);
+  if(S.over||!input.ok)return;
+  const f=api.useFace?input.faces[0]:null;
+  if(S.phase==="calib"){
+    S.calib+=dt;
+    if(f){S.bn++;S.base+=(f.brow-S.base)/S.bn;}
+    if(S.calib>=CALIB_T){S.phase="play";S.flash=.7;}
+    return;
+  }
+  S.t+=dt;
+  step(dt,f?Math.max(0,f.brow-S.base):0,!!(input.pointer&&input.pointer.down),!f);
+  if(S.p>=1){S.over=true;S.win=true;S.done=S.t;}
+  else if(S.t>=LIMIT){S.over=true;S.win=false;}
+}
+/* ---------- Dessin ---------- */
+function wheel(c,x,y,r,ang){
+  c.beginPath();c.arc(x,y,r,0,7);c.lineWidth=7;c.strokeStyle="#0E0E12";c.stroke();
+  c.beginPath();c.arc(x,y,r-5,0,7);c.lineWidth=2;c.strokeStyle="rgba(255,255,255,.85)";c.stroke();
+  c.lineWidth=1.2;c.strokeStyle="rgba(255,255,255,.6)";
+  for(let i=0;i<10;i++){const a=ang+i*Math.PI/5;c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.cos(a)*(r-5),y+Math.sin(a)*(r-5));c.stroke();}
+}
+function bike(c,snap){
+  /* origine : sol sous la roue arrière, vélo tourné vers la droite (la pente monte vers la droite) */
+  const frame="#14306E",acc="#E2231A",ink="#16161C";
+  const R=44,rx=-96,fx=96;
+  wheel(c,rx,-R,R,S.wheel*.02);wheel(c,fx,-R,R,S.wheel*.02);
+  const bb=[-8,-R-6],seat=[-40,-R-92],h1=[64,-R-88],h2=[70,-R-52],ra=[rx,-R],fa=[fx,-R];
+  const L=(pts,w,col)=>{c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.lineWidth=w;c.strokeStyle=col;c.lineCap="round";c.lineJoin="round";c.stroke();};
+  L([bb,h2],9,frame);L([bb,seat],8,frame);L([seat,h1],8,frame);L([h1,h2],10,frame);L([bb,ra],6,frame);L([seat,ra],5,frame);L([h2,fa],7,frame);
+  L([[-4,-R-8],[48,-R-62]],4,acc);
+  c.save();c.translate(10,-R-30);c.rotate(-.62);text(c,"WILIER",0,0,26,{stroke:false,color:"#fff",weight:800});c.restore();
+  /* pédalier */
+  const pa=S.wheel*.03;L([bb,[bb[0]+Math.cos(pa)*22,bb[1]+Math.sin(pa)*22]],5,ink);
+  /* cycliste */
+  const hip=[-34,-R-100],sh=[40,-R-170],hd=[62,-R-196];
+  L([seat,[seat[0]-4,seat[1]-8]],8,ink);
+  L([hip,sh],26,"#E2231A");           /* maillot */
+  L([sh,[h1[0]+2,h1[1]-4]],9,"#E2231A");
+  const kn=[bb[0]+Math.cos(pa+Math.PI)*22+16,bb[1]+Math.sin(pa+Math.PI)*22-44];
+  L([hip,kn,[bb[0]+Math.cos(pa+Math.PI)*22,bb[1]+Math.sin(pa+Math.PI)*22]],13,"#14306E");
+  /* tête : le visage du joueur */
+  c.save();c.translate(hd[0],hd[1]);
+  c.beginPath();c.arc(0,0,40,0,7);c.fillStyle="#EBC09A";c.fill();
+  if(snap){c.save();c.beginPath();c.arc(0,0,40,0,7);c.clip();c.drawImage(snap,-40,-40,80,80);c.restore();}
+  c.lineWidth=4;c.strokeStyle="#fff";c.beginPath();c.arc(0,0,40,0,7);c.stroke();
+  c.beginPath();c.arc(0,-6,44,Math.PI*1.05,Math.PI*1.98);c.lineWidth=14;c.strokeStyle="#E2231A";c.lineCap="round";c.stroke();
+  c.restore();
+}
+function draw(c,api,input){
+  const f=api.useFace&&input.faces[0]?input.faces[0]:null;
+  /* la tête du joueur est copiée avant tout autre dessin */
+  const snap=api.faceSnap(f);
+  const g=grade(S.p),ang=-Math.atan(g/100*3.2);       /* pente exagérée pour la lisibilité */
+  const px=FW*.5,py=900;
+  /* route inclinée */
+  c.save();c.translate(px,py);
+  c.save();c.rotate(ang);
+  c.fillStyle="rgba(28,30,44,.82)";c.fillRect(-900,0,1800,140);
+  c.fillStyle="#fff";c.fillRect(-900,0,1800,6);
+  c.setLineDash([60,50]);c.lineDashOffset=-(S.wheel*1.1)%110;c.lineWidth=7;c.strokeStyle="rgba(255,255,255,.85)";c.beginPath();c.moveTo(-900,74);c.lineTo(900,74);c.stroke();
+  c.restore();
+  c.save();c.rotate(ang);
+  bike(c,snap);
+  c.restore();c.restore();
+  /* HUD haut */
+  text(c,"COURSE DE CÔTE",FW/2,56,58,{maxw:FW-60});
+  text(c,S.phase==="calib"?"—":Math.max(0,LIMIT-S.t).toFixed(0)+" s",52,132,74,{align:"left"});
+  const kmh=Math.round(7+Math.max(0,S.v)*330),watts=Math.round(160+Math.max(0,S.v)*8200);
+  text(c,kmh+" km/h",FW-40,118,44,{align:"right"});
+  text(c,watts+" W",FW-40,164,40,{align:"right",color:watts>600?"#FF8A3C":"#fff"});
+  /* pente */
+  rr(c,40,180,170,64,14);c.fillStyle=g>=18?"rgba(215,38,61,.9)":"rgba(8,12,44,.72)";c.fill();
+  text(c,g+" %"+(g>=18?" MUR":""),125,213,44,{maxw:150,stroke:false});
+  /* progression verticale */
+  const bx=FW-52,y0=1000,y1=300;
+  rr(c,bx-9,y1,18,y0-y1,9);c.fillStyle="rgba(8,12,44,.7)";c.fill();
+  rr(c,bx-9,y0-(y0-y1)*S.p,18,(y0-y1)*S.p+1,9);c.fillStyle="#FFD84D";c.fill();
+  const gp=clamp(S.t/GHOST,0,1);
+  c.beginPath();c.arc(bx,y0-(y0-y1)*gp,10,0,7);c.fillStyle="rgba(255,255,255,.9)";c.fill();
+  c.beginPath();c.arc(bx,y0-(y0-y1)*S.p,15,0,7);c.fillStyle="#E2231A";c.fill();c.lineWidth=4;c.strokeStyle="#fff";c.stroke();
+  text(c,"ARRIVÉE",bx-8,y1-26,26,{align:"right",maxw:120});
+  text(c,"RECORD",bx-26,y0-(y0-y1)*gp,22,{align:"right",alpha:.9});
+  /* sourcils */
+  const lvl=clamp((S.rate/6),0,1);
+  rr(c,40,980,230,22,11);c.fillStyle="rgba(8,12,44,.7)";c.fill();
+  rr(c,40,980,Math.max(22,230*lvl),22,11);c.fillStyle=S.hi?"#7CFF9E":"#FFD84D";c.fill();
+  text(c,S.hi?"SOURCILS ↑":"SOURCILS ↓",40,1030,30,{align:"left"});
+  if(S.phase==="calib"){
+    c.fillStyle="rgba(8,12,44,.6)";c.fillRect(0,420,FW,330);
+    text(c,"SOURCILS DÉTENDUS",FW/2,530,70,{maxw:FW-60});
+    text(c,"lève-les ensuite, en rythme, pour pédaler",FW/2,620,34,{alpha:.9,maxw:FW-60});
+    text(c,String(Math.max(1,Math.ceil(CALIB_T-S.calib))),FW/2,700,90);
+  }
+  if(S.flash>0&&S.phase==="play")text(c,"PÉDALE !",FW/2,520,130,{alpha:S.flash/.7});
+  if(S.over){
+    c.fillStyle="rgba(8,12,44,.78)";c.fillRect(0,FH/2-210,FW,420);
+    text(c,S.win?"SOMMET !":"PANNE SÈCHE",FW/2,FH/2-110,110,{color:S.win?"#7CFF9E":"#FF6B6B",maxw:FW-50});
+    if(S.win){
+      text(c,S.done.toFixed(1)+" s",FW/2,FH/2-4,120,{color:"#FFD84D"});
+      text(c,S.done<GHOST?"Record battu de "+(GHOST-S.done).toFixed(1)+" s":"À "+(S.done-GHOST).toFixed(1)+" s du record",FW/2,FH/2+86,38,{alpha:.9,maxw:FW-60});
+    }else{
+      text(c,Math.round(S.p*100)+" % de la montée",FW/2,FH/2-4,64,{maxw:FW-60});
+      text(c,"Il manquait encore des sourcils",FW/2,FH/2+70,38,{alpha:.9,maxw:FW-60});
+    }
+  }
+}
+/* export pour les tests */
+window.__cote={S,step,grade,kick,constants:{LIMIT,GHOST}};
+runGame({
+  id:"cote",title:"Course de côte",partner:"Wilier",
+  intro:"Une course de côte sur un vélo Wilier, propulsée par tes sourcils : lève-les puis baisse-les en rythme pour pédaler. Si tu t'arrêtes, tu recules. Arrive au sommet en moins de 50 secondes, ta tête sur le cycliste.",
+  options:[{id:"sens",label:"Sensibilité des sourcils",def:"normale",choices:[["faible","Faible (grands sourcils)"],["normale","Normale"],["forte","Forte (petit mouvement)"]]}],
+  game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
+});
+</script>
+</body>
+</html>

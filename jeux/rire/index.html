@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Interdit de rire</title>
+</head>
+<body>
+<script type="module">
+import {runGame,FW,FH,clamp,rr,text,textBlock,drawCover,loadFirst,withExts} from "../../shared/engine.js";
+
+/* Photos : déposer 01.jpg, 02.jpg, 03.jpg… dans jeux/photos/rire/ (png et webp acceptés).
+   On peut aussi importer des images depuis l'écran d'accueil. À défaut, des cartes de texte s'affichent. */
+const PHOTOS=[];
+(async()=>{
+  let miss=0;
+  for(let n=1;n<=40&&miss<3;n++){
+    const im=await loadFirst(withExts("../photos/rire/"+String(n).padStart(2,"0"),["jpg","png","webp"]));
+    if(im){PHOTOS.push(im);miss=0;}else miss++;
+  }
+})();
+const IMPORTED=[];
+const CAPTIONS=["Le DS qui dit « c'est un petit col »","« Je suis à bloc » au kilomètre 5","« On est où ? » depuis le bus","« Dernier relais ! » (il reste 80 km)","Le mécano qui regarde ton vélo et dit « ah »","Un massage qui commence par « ça va faire mal »","« C'est plat jusqu'à l'arrivée »","Le menu : pâtes. Encore.","« J'ai pas de jambes aujourd'hui »","Le sprint pour la 14e place"];
+
+const DURATION=45,CARD_T=3.6,CALIB_T=2,SENS={faible:.8,normale:1,forte:1.3};
+const S={phase:"calib",t:0,calib:0,base:{smile:0,squint:0,jaw:0,n:0},score:0,above:0,cool:0,lives:3,rires:0,flash:0,over:false,win:false,card:0,cardT:0,order:[],sens:1,craque:0};
+
+function laugh(f,b,sens){
+  const s=Math.max(0,f.smile-b.smile)*1.7,q=Math.max(0,f.squint-b.squint)*.9,j=Math.max(0,f.jaw-b.jaw-.12)*.7;
+  return clamp((s+q+j)*sens,0,1.5);
+}
+function makeOrder(){
+  const items=[...PHOTOS,...IMPORTED].map(img=>({img}));
+  const list=items.length?items:CAPTIONS.map(t=>({cap:t}));
+  const a=list.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function start(api){
+  Object.assign(S,{phase:"calib",t:0,calib:0,base:{smile:0,squint:0,jaw:0,n:0},score:0,above:0,cool:0,lives:3,rires:0,flash:0,over:false,win:false,card:0,cardT:0,order:makeOrder(),sens:SENS[api.opts.sens]||1,craque:0});
+}
+function update(dt,input,api){
+  S.flash=Math.max(0,S.flash-dt);S.cool=Math.max(0,S.cool-dt);
+  if(S.over||!input.ok)return;
+  const f=api.useFace?input.faces[0]:null;
+  if(S.phase==="calib"){
+    S.calib+=dt;
+    if(f){const b=S.base;b.n++;b.smile+=(f.smile-b.smile)/b.n;b.squint+=(f.squint-b.squint)/b.n;b.jaw+=(f.jaw-b.jaw)/b.n;}
+    if(S.calib>=CALIB_T)S.phase="play";
+    return;
+  }
+  S.t+=dt;S.cardT+=dt;
+  if(S.cardT>=CARD_T){S.cardT=0;S.card=(S.card+1)%S.order.length;}
+  let raw=0;
+  if(f)raw=laugh(f,S.base,S.sens);
+  else if(input.pointer&&input.pointer.down)raw=1;
+  S.score+=(raw-S.score)*Math.min(1,dt*12);
+  if(S.score>.5)S.above+=dt;else if(S.score<.35)S.above=0;
+  if(S.above>.18&&S.cool<=0){
+    S.lives--;S.rires++;S.flash=.9;S.cool=1.8;S.above=0;
+    if(S.lives<=0){S.over=true;S.win=false;S.craque=S.t;}
+  }
+  if(S.t>=DURATION){S.over=true;S.win=true;}
+}
+function card(c,x,y,w,h,it,rot){
+  c.save();c.translate(x+w/2,y+h/2);c.rotate(rot);
+  c.shadowColor="rgba(0,0,0,.5)";c.shadowBlur=26;c.shadowOffsetY=12;
+  rr(c,-w/2,-h/2,w,h,22);c.fillStyle="#fff";c.fill();c.shadowColor="transparent";
+  c.save();rr(c,-w/2+10,-h/2+10,w-20,h-20,16);c.clip();
+  if(it&&it.img)drawCover(c,it.img,-w/2+10,-h/2+10,w-20,h-20);
+  else{
+    const g=c.createLinearGradient(-w/2,-h/2,w/2,h/2);g.addColorStop(0,"#1B3A8C");g.addColorStop(1,"#6A2BB8");
+    c.fillStyle=g;c.fillRect(-w/2,-h/2,w,h);
+    textBlock(c,it?it.cap:"",0,0,54,w-90,{lh:1.1});
+  }
+  c.restore();c.restore();
+}
+function draw(c,api){
+  c.fillStyle="rgba(8,12,44,.25)";c.fillRect(0,0,FW,FH);
+  text(c,"INTERDIT DE RIRE",FW/2,62,64,{maxw:FW-60});
+  /* jauge de rire */
+  rr(c,60,120,FW-120,26,13);c.fillStyle="rgba(8,12,44,.7)";c.fill();
+  const v=clamp(S.score/1.0,0,1);
+  rr(c,60,120,Math.max(26,(FW-120)*v),26,13);c.fillStyle=S.score>.5?"#FF4D4D":"#7CFF9E";c.fill();
+  c.fillStyle="#fff";c.fillRect(60+(FW-120)*.5-2,114,4,38);
+  /* chances */
+  for(let i=0;i<3;i++){
+    c.beginPath();c.arc(FW/2-50+i*50,190,17,0,7);c.fillStyle=i<S.lives?"#FFD84D":"rgba(255,255,255,.18)";c.fill();
+    c.lineWidth=3;c.strokeStyle="#fff";c.stroke();
+    if(i<S.lives){c.fillStyle="#1B1B22";c.beginPath();c.arc(FW/2-50+i*50-6,186,2.6,0,7);c.arc(FW/2-50+i*50+6,186,2.6,0,7);c.fill();c.fillRect(FW/2-50+i*50-7,196,14,2.5);}
+  }
+  if(S.phase==="calib"){
+    card(c,90,330,FW-180,560,null,0);
+    textBlock(c,"VISAGE NEUTRE",FW/2,520,70,FW-200);
+    text(c,"ne bouge pas, le jeu s'étalonne",FW/2,640,34,{alpha:.9,maxw:FW-120});
+    text(c,String(Math.max(1,Math.ceil(CALIB_T-S.calib))),FW/2,760,120);
+  }else{
+    const it=S.order[S.card],k=clamp(S.cardT/.25,0,1),e=1-Math.pow(1-k,3);
+    card(c,60,290,FW-120,650,it,(1-e)*.18+Math.sin(S.t*.9)*.012);
+    text(c,Math.ceil(Math.max(0,DURATION-S.t))+" s",FW-40,1000,64,{align:"right"});
+    text(c,S.rires+" rire"+(S.rires>1?"s":""),40,1000,48,{align:"left",color:"#FFD84D"});
+  }
+  if(S.flash>0){
+    c.fillStyle="rgba(215,38,61,"+(.45*S.flash/.9).toFixed(2)+")";c.fillRect(0,0,FW,FH);
+    text(c,"RIRE DÉTECTÉ",FW/2,FH/2,100,{color:"#fff",maxw:FW-40});
+  }
+  if(S.over){
+    c.fillStyle="rgba(8,12,44,.78)";c.fillRect(0,FH/2-210,FW,420);
+    text(c,S.win?"VISAGE DE MARBRE":"TU AS CRAQUÉ",FW/2,FH/2-110,92,{maxw:FW-50,color:S.win?"#7CFF9E":"#FF6B6B"});
+    text(c,S.win?"45 s sans trahir ton visage":"à "+Math.round(S.craque)+" secondes",FW/2,FH/2-10,50,{maxw:FW-60});
+    text(c,S.rires+" rire"+(S.rires>1?"s":"")+" détecté"+(S.rires>1?"s":""),FW/2,FH/2+70,44,{alpha:.9});
+    text(c,"Sensibilité : "+(S.sens>1?"forte":S.sens<1?"faible":"normale"),FW/2,FH/2+130,28,{alpha:.7});
+  }
+}
+window.__rire={S,laugh};
+runGame({
+  id:"rire",title:"Interdit de rire",
+  intro:"Des images défilent, tu ne dois pas rire. Le jeu mesure ton sourire et t'enlève une chance à chaque rire détecté : trois chances, 45 secondes. Reste neutre 2 secondes au début pour l'étalonnage.",
+  options:[{id:"sens",label:"Sensibilité du rire",def:"normale",choices:[["faible","Faible (il faut rire franchement)"],["normale","Normale"],["forte","Forte (le moindre sourire)"]]}],
+  introExtra:`<div class="row"><label class="filebtn" for="imgs">Importer des images<input id="imgs" type="file" accept="image/*" multiple></label><span class="status small" id="imgstatus"></span></div><p class="small">Photos du dossier du jeu : 01.jpg, 02.jpg… dans jeux/photos/rire/. Sans image, des cartes de texte s'affichent.</p>`,
+  onIntro:(api,$)=>{
+    $("imgs").onchange=e=>{
+      const fs=[...(e.target.files||[])].slice(0,40);let n=0;
+      fs.forEach(f=>{const im=new Image();im.onload=()=>{IMPORTED.push(im);n++;$("imgstatus").textContent=n+" image"+(n>1?"s":"")+" importée"+(n>1?"s":"");};im.src=URL.createObjectURL(f);});
+    };
+  },
+  game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
+});
+</script>
+</body>
+</html>
