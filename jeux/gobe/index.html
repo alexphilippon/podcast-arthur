@@ -10,11 +10,11 @@
 import {runGame,FW,FH,clamp,text,drawCover,loadFirst,withExts,initials} from "../../shared/engine.js";
 
 /* Photos : jeux/photos/equipe/<slug>.jpg (sinon top10/photos/<slug>.jpg), jeux/photos/rivaux/<slug>.jpg */
-const AMIS=[["thibaut-pinot","Thibaut Pinot"],["arnaud-demare","Arnaud Démare"],["frederic-guesdon","Frédéric Guesdon"],["philippe-gilbert","Philippe Gilbert"],["bradley-mcgee","Bradley McGee"],["baden-cooke","Baden Cooke"],["david-gaudu","David Gaudu"],["sandy-casar","Sandy Casar"],["stefan-kung","Stefan Küng"],["arthur-vichot","Arthur Vichot"]];
-/* Rivaux : anciens de la maison, noms qui ressemblent à ceux de l'équipe, et quelques stars pour brouiller les pistes */
-const RIVAUX=[["guillaume-martin","Guillaume Martin"],["olivier-le-gac","Olivier Le Gac"],["nacer-bouhanni","Nacer Bouhanni"],["bradley-wiggins","Bradley Wiggins"],["alexandre-geniez","Alexandre Geniez"],["jake-stewart","Jake Stewart"],
-["arnaud-de-lie","Arnaud De Lie"],["thibau-nys","Thibau Nys"],["stefan-bissegger","Stefan Bissegger"],["sandy-dujardin","Sandy Dujardin"],["valentin-ferron","Valentin Ferron"],["david-de-la-cruz","David de la Cruz"],["frederik-frison","Frederik Frison"],["brandon-mcnulty","Brandon McNulty"],["phil-bauhaus","Phil Bauhaus"],
-["tadej-pogacar","Tadej Pogačar"],["jonas-vingegaard","Jonas Vingegaard"],["remco-evenepoel","Remco Evenepoel"],["mathieu-van-der-poel","Mathieu van der Poel"],["julian-alaphilippe","Julian Alaphilippe"]];
+const slugOf=n=>n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"");
+const toList=t=>t.split("|").map(n=>[slugOf(n),n]);
+/* A couru pour l'équipe (AMIS) ou n'y a jamais couru (RIVAUX). Photos : <prenom>-<nom>.jpg */
+const AMIS=toList("Thibaut PINOT|Arnaud DÉMARE|David GAUDU|Sandy CASAR|Valentin MADOUAS|Stefan KÜNG|Philippe GILBERT|Romain GRÉGOIRE|Arthur VICHOT|Matthieu LADAGNOUS|Bradley MCGEE|Frédéric GUESDON|Anthony ROUX|Baden COOKE|Nacer BOUHANNI|Rudy MOLARD|Christophe MENGIN|Jérémy ROY|Yauheni HUTAROVICH|Benoît VAUGRENARD|Stéphane HEULOT|Sébastien REICHENBACH|Emmanuel MAGNIEN|Bernhard EISEL|Paul PENHOËT|Marc SARREAU|Jussi VEIKKANEN|Mickaël DELAGE|Pierrick FÉDRIGO|Lenny MARTINEZ|Bradley WIGGINS|Davide REBELLIN|Cédric PINEAU|William BONNET|Ignatas KONOVALOVAS|Jacopo GUARNIERI|Ramon SINKELDAM");
+const RIVAUX=toList("Julian ALAPHILIPPE|Sylvain CHAVANEL|Thomas VOECKLER|Christophe LAPORTE|Bryan COQUARD|Romain BARDET|Benoit COSNEFROY|Samuel DUMOULIN|Tony GALLOPIN|Pavel SIVAKOV|Warren BARGUIL|Pierre ROLLAND|Anthony TURGIS|Jérôme PINEAU|Pierre LATOUR|Alexis GOUGEARD|Peter SAGAN|Tom BOONEN|Vincenzo NIBALI|Jasper PHILIPSEN|Cadel EVANS|Elia VIVIANI|Thor HUSHOVD|Tim WELLENS|Richie PORTE|Simon GERRANS|Dan MARTIN|Michael ROGERS|Rigoberto URAN|Frank SCHLECK");
 const mk=(list,kind,bases)=>list.map(([slug,name])=>{
   const c={slug,name,kind,img:null,ini:initials(name)};
   loadFirst(bases.flatMap(b=>withExts(b+slug,["jpg","png","webp"]))).then(im=>{c.img=im;});
@@ -129,7 +129,7 @@ function draw(c,api,input){
 window.__gobe={S};
 runGame({
   id:"gobe",title:"Gobe-têtes",
-  intro:"Des têtes de coureurs de l'équipe tombent du ciel : ouvre la bouche pour les gober. Attention aux intrus : anciens de la maison, noms qui se ressemblent, autres équipes. Dans le doute, ferme la bouche. 45 secondes.",
+  intro:"Des têtes de coureurs tombent du ciel : gobe ceux qui ont couru pour l'équipe, laisse passer ceux qui n'y ont jamais couru. Dans le doute, réfléchis vite. 45 secondes.",
   game:{start,update,draw,isOver:()=>S.over,hint:()=>""}
 });
 </script>

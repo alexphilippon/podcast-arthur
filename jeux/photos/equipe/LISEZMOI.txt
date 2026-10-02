@@ -1,2 +1,38 @@
-Dépose ici les portraits des coureurs de l équipe (format carré ou 4:5), nommés : thibaut-pinot.jpg, arnaud-demare.jpg, frederic-guesdon.jpg, philippe-gilbert.jpg, bradley-mcgee.jpg, baden-cooke.jpg, david-gaudu.jpg, sandy-casar.jpg, stefan-kung.jpg, arthur-vichot.jpg
-Sans fichier ici, le jeu cherche aussi dans top10/photos/.
+Portraits des coureurs qui ont couru pour l'équipe (le jeu cherche aussi dans top10/photos/) — format prenom-nom.jpg (sans accents) :
+thibaut-pinot.jpg
+arnaud-demare.jpg
+david-gaudu.jpg
+sandy-casar.jpg
+valentin-madouas.jpg
+stefan-kung.jpg
+philippe-gilbert.jpg
+romain-gregoire.jpg
+arthur-vichot.jpg
+matthieu-ladagnous.jpg
+bradley-mcgee.jpg
+frederic-guesdon.jpg
+anthony-roux.jpg
+baden-cooke.jpg
+nacer-bouhanni.jpg
+rudy-molard.jpg
+christophe-mengin.jpg
+jeremy-roy.jpg
+yauheni-hutarovich.jpg
+benoit-vaugrenard.jpg
+stephane-heulot.jpg
+sebastien-reichenbach.jpg
+emmanuel-magnien.jpg
+bernhard-eisel.jpg
+paul-penhoet.jpg
+marc-sarreau.jpg
+jussi-veikkanen.jpg
+mickael-delage.jpg
+pierrick-fedrigo.jpg
+lenny-martinez.jpg
+bradley-wiggins.jpg
+davide-rebellin.jpg
+cedric-pineau.jpg
+william-bonnet.jpg
+ignatas-konovalovas.jpg
+jacopo-guarnieri.jpg
+ramon-sinkeldam.jpg

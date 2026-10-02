@@ -1,1 +1,31 @@
-Portraits des coureurs rivaux (anciens de la maison, noms qui ressemblent, stars) : guillaume-martin.jpg, olivier-le-gac.jpg, nacer-bouhanni.jpg, bradley-wiggins.jpg, alexandre-geniez.jpg, jake-stewart.jpg, arnaud-de-lie.jpg, thibau-nys.jpg, stefan-bissegger.jpg, sandy-dujardin.jpg, valentin-ferron.jpg, david-de-la-cruz.jpg, frederik-frison.jpg, brandon-mcnulty.jpg, phil-bauhaus.jpg, tadej-pogacar.jpg, jonas-vingegaard.jpg, remco-evenepoel.jpg, mathieu-van-der-poel.jpg, julian-alaphilippe.jpg
+Portraits des coureurs qui n'ont jamais couru pour l'équipe — format prenom-nom.jpg (sans accents) :
+julian-alaphilippe.jpg
+sylvain-chavanel.jpg
+thomas-voeckler.jpg
+christophe-laporte.jpg
+bryan-coquard.jpg
+romain-bardet.jpg
+benoit-cosnefroy.jpg
+samuel-dumoulin.jpg
+tony-gallopin.jpg
+pavel-sivakov.jpg
+warren-barguil.jpg
+pierre-rolland.jpg
+anthony-turgis.jpg
+jerome-pineau.jpg
+pierre-latour.jpg
+alexis-gougeard.jpg
+peter-sagan.jpg
+tom-boonen.jpg
+vincenzo-nibali.jpg
+jasper-philipsen.jpg
+cadel-evans.jpg
+elia-viviani.jpg
+thor-hushovd.jpg
+tim-wellens.jpg
+richie-porte.jpg
+simon-gerrans.jpg
+dan-martin.jpg
+michael-rogers.jpg
+rigoberto-uran.jpg
+frank-schleck.jpg
